@@ -9,12 +9,13 @@
 
 
 
-// large_num large_num::operator~() const{
-//     large_num res = *this;
-//     for (auto &part: res.v)
-//         part = ~part;
-//     return res;
-// }
+large_num large_num::operator~() const{
+    // large_num res = *this;
+    // for (auto &part: res.v)
+    //     part = ~part;
+    // return res;
+    return *this;
+}
 
 // large_num large_num::operator&(const large_num &other) const{
 //     // tmp
@@ -45,47 +46,47 @@
 // }
 
 
-// large_num large_num::operator+() const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator+() const{
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator-() const{
-//     // tmp
-//     return *this;
-// }
-
-
-// large_num &large_num::operator++(){
-//     // tmp
-//     return *this;
-// }
-
-// large_num large_num::operator++(int){
-//     // tmp
-//     return *this;
-// }
-
-// large_num &large_num::operator--(){
-//     // tmp
-//     return *this;
-// }
-
-// large_num large_num::operator--(int){
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator-() const{
+    // tmp
+    return *this;
+}
 
 
-// large_num large_num::operator+(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num &large_num::operator++(){
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator-(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator++(int){
+    // tmp
+    return *this;
+}
+
+large_num &large_num::operator--(){
+    // tmp
+    return *this;
+}
+
+large_num large_num::operator--(int){
+    // tmp
+    return *this;
+}
+
+
+large_num large_num::operator+(const large_num &other) const{
+    // tmp
+    return *this;
+}
+
+large_num large_num::operator-(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
 // large_num large_num::operator*(const large_num &other) const{
 //     // tmp

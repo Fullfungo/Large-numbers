@@ -27,21 +27,21 @@ struct large_num{
         // template<std::integral T>
         // large_num &operator=(const T v);
 
-        // large_num operator~() const;
+        large_num operator~() const;
         // large_num operator&(const large_num &other) const;
         // large_num operator|(const large_num &other) const;
         // large_num operator^(const large_num &other) const;
 
-        // large_num operator+() const;
-        // large_num operator-() const;
+        large_num operator+() const;
+        large_num operator-() const;
 
-        // large_num &operator++();
-        // large_num operator++(int);
-        // large_num &operator--();
-        // large_num operator--(int);
+        large_num &operator++();
+        large_num operator++(int);
+        large_num &operator--();
+        large_num operator--(int);
 
-        // large_num operator+(const large_num &other) const;
-        // large_num operator-(const large_num &other) const;
+        large_num operator+(const large_num &other) const;
+        large_num operator-(const large_num &other) const;
         // large_num operator*(const large_num &other) const;
         // large_num operator/(const large_num &other) const;
         // large_num operator%(const large_num &other) const;
@@ -52,6 +52,7 @@ struct large_num{
         std::strong_ordering operator<=>(const large_num &other) const;
 
         bool operator==(const large_num &other) const = default;
+        // bool operator!=(const large_num &other) const; // candidate for deletion
 
         explicit operator bool() const;
 
