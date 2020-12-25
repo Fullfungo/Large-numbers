@@ -6,15 +6,14 @@
 // //     v(std::vector<chunk_type>(bitsize % bits_per_chunk? bitsize / bits_per_chunk + 1 : bitsize / bits_per_chunk, 0)){}
 
 large_num::large_num(bool value){
-    large_num_storage = std::vector<chunk_type>(1);
-    bitsize = 1;
-    large_num_storage.at(0) = value;
+    storage = std::vector<chunk_type>{value};
+    return;
 }
 
 
 large_num large_num::operator~() const{
     large_num res = *this;
-    for (auto &part: res.large_num_storage)
+    for (auto &part: res.storage)
         part = ~part;
     return res;
 }
@@ -60,7 +59,7 @@ large_num large_num::operator-() const{
 large_num &large_num::operator++(){ // finish this: add extending storage
     bool needs_more_space[[maybe_unused]]; // to do: implement ---------- ---------- ---------- ----------
 
-    for(auto &chunk : large_num_storage){
+    for(auto &chunk : storage){
         chunk += 1;
         if (chunk == 0){ // wrap-around occured
             continue;
@@ -161,30 +160,42 @@ large_num::operator bool() const{
 }
 
 
-bool large_num::get_bit(const size_t n) const{
+bool large_num::get_bit(size_t n) const{
+    size_t max_bit_index = storage.size() * bits_per_chunk - 1;
+    n = std::min(n, max_bit_index); // bits past-the-end are the same as the msb
+
     size_t chunk_index = n / bits_per_chunk;
     size_t bit_index   = n % bits_per_chunk;
-    chunk_type chunk = large_num_storage.at(chunk_index);
+
+    chunk_type chunk = storage.at(chunk_index);
     size_t bit_mask = (1 << bit_index);
     bool bit = chunk & bit_mask;
     return bit;
 }
 
-void large_num::set_bit(const size_t n, bool value){
+void large_num::set_bit(const size_t n, bool value){ // add: extention on past-the-end bit setting ---------- ---------- ----------
+    if (get_bit(n) == value){
+        return;
+    }
     size_t chunk_index = n / bits_per_chunk;
     size_t bit_index   = n % bits_per_chunk;
-    chunk_type &chunk = large_num_storage.at(chunk_index);
+
+    chunk_type &chunk = storage.at(chunk_index);
     size_t bit_mask = (1 << bit_index);
+
     if (value){
         chunk &= bit_mask;
     }else{
         chunk |= ~bit_mask;
     }
+    
+    clean_up();
+
     return;
 }
 
 bool large_num::sign_bit() const{
-    size_t bit_index = bitsize - 1;
+    size_t bit_index = storage.size() * bits_per_chunk - 1;
     bool bit = get_bit(bit_index);
     return bit;
 }
@@ -194,7 +205,7 @@ bool large_num::is_negative() const{
 }
 
 bool large_num::is_zero() const{
-    return bitsize == 1 && !is_negative();
+    return storage.size() == 1 && storage.at(0) == static_cast<chunk_type>(0);
 }
 
 bool large_num::is_positive() const{
@@ -202,12 +213,19 @@ bool large_num::is_positive() const{
 }
 
 void large_num::clean_up(){
-    // add: update the new bitsize ---------- ---------- ---------- ----------
-    size_t sign_index = bitsize - 1;
-    size_t sign_chunk_index = sign_index / bits_per_chunk;
-    size_t sign_bit_index   = sign_index % bits_per_chunk;
-    if (sign_bit_index == bits_per_chunk - 1){ // sign bit is in the last bit of the chunk
-        large_num_storage.resize(sign_chunk_index + 1); // any chunks after that point are redundant
+    size_t new_size = storage.size();
+    while (new_size > 1){
+        chunk_type chunk = storage.at(new_size - 1);
+        bool lower_chunk_msb = get_bit((new_size - 1) * bits_per_chunk - 1);
+        if ((chunk == static_cast<chunk_type>( 0) && lower_chunk_msb == 0) ||
+            (chunk == static_cast<chunk_type>(~0) && lower_chunk_msb == 1)){
+            --new_size;
+        }else{
+            break;
+        }
     }
+
+    storage.resize(new_size);
+
     return;
 }

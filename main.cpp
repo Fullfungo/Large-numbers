@@ -4,7 +4,7 @@
 #include <cassert>
 #include <string>
 
-#define RUN_TESTS 0
+#define RUN_TESTS 1
 
 #if RUN_TESTS
     #define int_type_casts(start, end) \
@@ -123,7 +123,7 @@
 #if PRIVATE_ACCESS
     void print_large_num_content(const large_num &num){
         std::cout << "Contents: ";
-        for (auto &chunk : num.large_num_storage){
+        for (auto &chunk : num.storage){
             std::cout << "[" << (uintmax_t)chunk << "] ";
         }
         std::cout << "\b.\n";
@@ -133,13 +133,9 @@
 #endif
 
 
-
 int main(int, char **){
 
-    print_large_num_content(large_num(0));
-
-    // print_large_num_content(large_num((unsigned long int)-29));
-    // std::cout << (unsigned long int)(large_num((unsigned long int)-29)) << '\n';
+    print_large_num_content(large_num(33) - large_num(12));
 
     // int a = static_cast<decltype(a)>(2);
 
@@ -290,10 +286,10 @@ int main(int, char **){
         test_arithmetic_binary(  0, -,  12, -12);
         test_arithmetic_binary(-33, -,   0, -33);
         test_arithmetic_binary(  0, -, -12,  12);
-        test_arithmetic_binary( 33, -,  12,  11);
+        test_arithmetic_binary( 33, -,  12,  21);
         test_arithmetic_binary( 33, -, -12,  45);
         test_arithmetic_binary(-33, -,  12, -45);
-        test_arithmetic_binary(-33, -, -12, -11);
+        test_arithmetic_binary(-33, -, -12, -21);
     );
 
     test_named_inplace("multiplication",
