@@ -90,14 +90,23 @@
     test_single_comparison_operation(a, <=>, b)
 
     #define test_arithmetic_unary_prefix(operator, a, result) \
-    check(operator static_cast<large_num>(a) == static_cast<large_num>(result))
+    check((operator static_cast<large_num>(a)) == static_cast<large_num>(result))
 
     #define test_arithmetic_unary_postfix(operator, a, result1, result2) \
     check_with_prerequisite(large_num a_large = a,\
     a_large operator == static_cast<large_num>(result1) && a_large == static_cast<large_num>(result2))
 
     #define test_arithmetic_binary(a, operator, b, result) \
-    check(static_cast<large_num>(a) operator static_cast<large_num>(b) == static_cast<large_num>(result))
+    check((static_cast<large_num>(a) operator static_cast<large_num>(b)) == static_cast<large_num>(result))
+
+    class expected_exception: public std::exception{};
+
+    #define expect_exception(expression) \
+    try{expression; throw std::runtime_error(#expression" did not throw an exception on line " + std::to_string(__LINE__));}\
+    catch(expected_exception &e[[maybe_unused]]){}\
+    catch(...){throw;}
+
+    #define undefined_value (-0)
 #else
     #define int_type_casts(start, end)
     #define unsigned_int_type_casts(start, end)
@@ -118,6 +127,7 @@
     #define test_arithmetic_unary_prefix(operator, a, result)
     #define test_arithmetic_unary_postfix(operator, a, result1, result2)
     #define test_arithmetic_binary(a, operator, b, result)
+    #define expect_exception(expression)
 #endif
 
 #if PRIVATE_ACCESS
@@ -202,6 +212,20 @@ int main(int, char **){
         isolated_cast(bool_type_cast, ,          a = large_num(static_cast<decltype(a)>(0))  ; check(a == static_cast<decltype(a)>(0));  );
         isolated_cast(bool_type_cast, ,          a = large_num(static_cast<decltype(a)>(+29)); check(a == static_cast<decltype(a)>(+29)););
         isolated_cast(bool_type_cast, ,          a = large_num(static_cast<decltype(a)>(-29)); check(a == static_cast<decltype(a)>(-29)););
+    );
+
+
+    // comparison
+    test_named_inplace("comparison",
+        test_comparison(0  , 0  );
+        test_comparison(+39, 0  );
+        test_comparison(0  , +42);
+        test_comparison(-39, 0  );
+        test_comparison(0  , -42);
+        test_comparison(+39, +42);
+        test_comparison(+39, -42);
+        test_comparison(-39, +42);
+        test_comparison(-39, -42);
     );
 
 
@@ -293,35 +317,107 @@ int main(int, char **){
     );
 
     test_named_inplace("multiplication",
-        ;
+        test_arithmetic_binary(  0, *,   0,    0);
+        test_arithmetic_binary( 12, *,   0,    0);
+        test_arithmetic_binary(  0, *,  47,    0);
+        test_arithmetic_binary(-12, *,   0,    0);
+        test_arithmetic_binary(  0, *, -47,    0);
+        test_arithmetic_binary( 13, *,  18,  234);
+        test_arithmetic_binary(-13, *,  18, -234);
+        test_arithmetic_binary( 13, *, -18, -234);
+        test_arithmetic_binary(-13, *, -18,  234);
     );
 
     test_named_inplace("division",
-        ;
+        expect_exception(test_arithmetic_binary(  0, /, 0, undefined_value));
+        expect_exception(test_arithmetic_binary( 22, /, 0, undefined_value));
+        expect_exception(test_arithmetic_binary(-22, /, 0, undefined_value));
+        test_arithmetic_binary(  0, /,  22,  0);
+        test_arithmetic_binary(  0, /, -22,  0);
+        test_arithmetic_binary( 66, /,  22,  3);
+        test_arithmetic_binary( 66, /, -22, -3);
+        test_arithmetic_binary(-66, /,  22, -3);
+        test_arithmetic_binary(-66, /, -22,  3);
+        test_arithmetic_binary( 97, /,  22,  4);
+        test_arithmetic_binary( 97, /, -22, -4);
+        test_arithmetic_binary(-97, /,  22, -4);
+        test_arithmetic_binary(-97, /, -22,  4);
     );
 
     test_named_inplace("modulo",
-        ;
+        expect_exception(test_arithmetic_binary(  0, %, 0, undefined_value));
+        expect_exception(test_arithmetic_binary( 22, %, 0, undefined_value));
+        expect_exception(test_arithmetic_binary(-22, %, 0, undefined_value));
+        test_arithmetic_binary(  0, %,  22,  0);
+        test_arithmetic_binary(  0, %, -22,  0);
+        test_arithmetic_binary( 66, %,  22,  0);
+        test_arithmetic_binary( 66, %, -22,  0);
+        test_arithmetic_binary(-66, %,  22,  0);
+        test_arithmetic_binary(-66, %, -22,  0);
+        test_arithmetic_binary( 97, %,  22,  9);
+        test_arithmetic_binary( 97, %, -22,  9);
+        test_arithmetic_binary(-97, %,  22, -9);
+        test_arithmetic_binary(-97, %, -22, -9);
     );
 
     test_named_inplace("bitwise AND",
-        ;
+        test_arithmetic_binary(  0, &,   0,   0);
+        test_arithmetic_binary( 22, &,   0,   0);
+        test_arithmetic_binary(  0, &,  22,   0);
+        test_arithmetic_binary(-22, &,   0,   0);
+        test_arithmetic_binary(  0, &, -22,   0);
+        test_arithmetic_binary( 25, &,  19,  17);
+        test_arithmetic_binary( 25, &, -19,   9);
+        test_arithmetic_binary(-25, &,  19,   3);
+        test_arithmetic_binary(-25, &, -19, -27);
     );
 
     test_named_inplace("bitwise OR",
-        ;
+        test_arithmetic_binary(  0, |,   0,   0);
+        test_arithmetic_binary( 22, |,   0,  22);
+        test_arithmetic_binary(  0, |,  22,  22);
+        test_arithmetic_binary(-22, |,   0, -22);
+        test_arithmetic_binary(  0, |, -22, -22);
+        test_arithmetic_binary( 25, |,  19,  27);
+        test_arithmetic_binary( 25, |, -19,  -3);
+        test_arithmetic_binary(-25, |,  19,  -9);
+        test_arithmetic_binary(-25, |, -19, -17);
     );
 
     test_named_inplace("bitwise XOR",
-        ;
+        test_arithmetic_binary(  0, ^,   0,   0);
+        test_arithmetic_binary( 22, ^,   0,  22);
+        test_arithmetic_binary(  0, ^,  22,  22);
+        test_arithmetic_binary(-22, ^,   0, -22);
+        test_arithmetic_binary(  0, ^, -22, -22);
+        test_arithmetic_binary( 25, ^,  19,  10);
+        test_arithmetic_binary( 25, ^, -19, -12);
+        test_arithmetic_binary(-25, ^,  19, -12);
+        test_arithmetic_binary(-25, ^, -19,  10);
     );
 
     test_named_inplace("left shift",
-        ;
+        expect_exception(test_arithmetic_binary(  0, <<, -3, undefined_value));
+        expect_exception(test_arithmetic_binary( 12, <<, -3, undefined_value));
+        expect_exception(test_arithmetic_binary(-12, <<, -3, undefined_value));
+        test_arithmetic_binary(  0, <<,   0,    0);
+        test_arithmetic_binary(  0, <<,   3,    0);
+        test_arithmetic_binary( 15, <<,   0,   15);
+        test_arithmetic_binary(-15, <<,   0,  -15);
+        test_arithmetic_binary( 15, <<,   3,  120);
+        test_arithmetic_binary(-15, <<,   3, -120);
     );
 
     test_named_inplace("right shift",
-        ;
+        expect_exception(test_arithmetic_binary(  0, >>, -3, undefined_value));
+        expect_exception(test_arithmetic_binary( 12, >>, -3, undefined_value));
+        expect_exception(test_arithmetic_binary(-12, >>, -3, undefined_value));
+        test_arithmetic_binary(  0, >>,   0,   0);
+        test_arithmetic_binary(  0, >>,   3,   0);
+        test_arithmetic_binary( 15, >>,   0,  15);
+        test_arithmetic_binary(-15, >>,   0, -15);
+        test_arithmetic_binary( 15, >>,   3,  1);
+        test_arithmetic_binary(-15, >>,   3, -2);
     );
 
 
@@ -386,19 +482,6 @@ int main(int, char **){
         ;
     );
 
-
-    // comparison
-    test_named_inplace("comparison",
-        test_comparison(0  , 0  );
-        // test_comparison(+39, 0  );
-        // test_comparison(0  , +42);
-        // test_comparison(-39, 0  );
-        // test_comparison(0  , -42);
-        // test_comparison(+39, +42);
-        // test_comparison(+39, -42);
-        // test_comparison(-39, +42);
-        // test_comparison(-39, -42);
-    );
 
     return 0;
 }

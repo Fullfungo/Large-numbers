@@ -60,9 +60,9 @@ struct large_num{
         // large_num &operator=(const T v);
 
         large_num operator~() const;
-        // large_num operator&(const large_num &other) const;
-        // large_num operator|(const large_num &other) const;
-        // large_num operator^(const large_num &other) const;
+        large_num operator&(const large_num &other) const;
+        large_num operator|(const large_num &other) const;
+        large_num operator^(const large_num &other) const;
 
         large_num operator+() const;
         large_num operator-() const;
@@ -74,12 +74,12 @@ struct large_num{
 
         large_num operator+(const large_num &other) const;
         large_num operator-(const large_num &other) const;
-        // large_num operator*(const large_num &other) const;
-        // large_num operator/(const large_num &other) const;
-        // large_num operator%(const large_num &other) const;
+        large_num operator*(const large_num &other) const;
+        large_num operator/(const large_num &other) const;
+        large_num operator%(const large_num &other) const;
 
-        // large_num operator<<(const large_num &other) const;
-        // large_num operator>>(const large_num &other) const;
+        large_num operator<<(const large_num &other) const;
+        large_num operator>>(const large_num &other) const;
 
         std::strong_ordering operator<=>(const large_num &other) const;
 

@@ -18,33 +18,20 @@ large_num large_num::operator~() const{
     return res;
 }
 
-// large_num large_num::operator&(const large_num &other) const{
-//     // tmp
-//     large_num res(std::min(bitsize, other.bitsize), by_size);
-//     for (size_t i = 0; i < res.v.size(); ++i)
-//         res.v[i] = v[i] & other.v[i];
-//     return *this;
-// }
+large_num large_num::operator&(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator|(const large_num &other) const{
-//     // extend sign_bits
-//     const large_num &longer  = (v.size() >= other.v.size())? *this: other;
-//     const large_num &shorter = (v.size() >= other.v.size())? other: *this;
-//     large_num res(longer.bitsize, by_size);
-//     for (size_t i = 0; i < shorter.v.size(); ++i)
-//             res.v[i] = longer.v[i] | shorter.v[i];
-//     for (size_t i = shorter.v.size(); i < longer.v.size(); ++i)
-//         if (shorter.sign_bit())
-//             res.v[i] = -1;
-//         else
-//             res.v[i] = longer.v[i];
-//     return res;
-// }
+large_num large_num::operator|(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator^(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator^(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
 
 large_num large_num::operator+() const{
@@ -108,31 +95,31 @@ large_num large_num::operator-(const large_num &other) const{
     return *this + -other;
 }
 
-// large_num large_num::operator*(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator*(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator/(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator/(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator%(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator%(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
 
-// large_num large_num::operator<<(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator<<(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
-// large_num large_num::operator>>(const large_num &other) const{
-//     // tmp
-//     return *this;
-// }
+large_num large_num::operator>>(const large_num &other) const{
+    // tmp
+    return *this;
+}
 
 // std::ostream &operator<<(std::ostream &os, const large_num &n){
 //     // tmp
