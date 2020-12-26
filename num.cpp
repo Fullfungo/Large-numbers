@@ -19,18 +19,30 @@ large_num large_num::operator~() const{
 }
 
 large_num large_num::operator&(const large_num &other) const{
-    // tmp
-    return *this;
+    large_num result = *this;
+    // only works for same-size numbers ---------- ---------- ---------- ----------
+    for (size_t i = 0; i < storage.size(); ++i){
+        result.storage.at(i) &= other.storage.at(i);
+    }
+    return result;
 }
 
 large_num large_num::operator|(const large_num &other) const{
-    // tmp
-    return *this;
+    large_num result = *this;
+    // only works for same-size numbers ---------- ---------- ---------- ----------
+    for (size_t i = 0; i < storage.size(); ++i){
+        result.storage.at(i) |= other.storage.at(i);
+    }
+    return result;
 }
 
 large_num large_num::operator^(const large_num &other) const{
-    // tmp
-    return *this;
+    large_num result = *this;
+    // only works for same-size numbers ---------- ---------- ---------- ----------
+    for (size_t i = 0; i < storage.size(); ++i){
+        result.storage.at(i) ^= other.storage.at(i);
+    }
+    return result;
 }
 
 
@@ -54,6 +66,8 @@ large_num &large_num::operator++(){ // finish this: add extending storage
             break;
         }
     }
+
+    clean_up();
     return *this;
 }
 
@@ -83,9 +97,8 @@ large_num large_num::operator+(const large_num &other) const{
     }
 
     // for a positive addend: a + b = (a + 1) + (b - 1) = ... (a + b) - 0
-    while (addend){ // to do: fix ---------- ---------- ---------- ----------
+    while (addend--){ // to do: fix ---------- ---------- ---------- ----------
         ++augend;
-        --addend;
     }
 
     return augend;
@@ -96,30 +109,119 @@ large_num large_num::operator-(const large_num &other) const{
 }
 
 large_num large_num::operator*(const large_num &other) const{
-    // tmp
-    return *this;
+    if (other.is_negative()){
+        return -(*this * -other);
+    }
+
+    const large_num &multiplier = *this;
+    large_num multiplicand = other;
+    large_num product;
+
+    while (multiplicand--){
+        product = product + multiplier;
+    }
+    
+    return product;
 }
 
 large_num large_num::operator/(const large_num &other) const{
-    // tmp
-    return *this;
+    if (other.is_zero()){
+        throw std::out_of_range("You cannot divide by 0");
+    }
+    if ((*this).is_negative()){
+        return -(-*this / other);
+    }
+    if (other.is_negative()){
+        return -(*this / -other);
+    }
+
+    large_num dividend = *this;
+    const large_num &divisor = other;
+    large_num quotient;
+
+    while (!((dividend = dividend - divisor).is_negative())){
+        ++quotient;
+    }
+    
+    return quotient;
 }
 
 large_num large_num::operator%(const large_num &other) const{
-    // tmp
-    return *this;
+    return *this - (*this / other) * other;
 }
 
 
 large_num large_num::operator<<(const large_num &other) const{
-    // tmp
-    return *this;
+    if (other.is_negative()){
+        throw std::out_of_range("You cannot shift by a negative number");
+    }
+
+    large_num result = *this;
+    large_num shift = other;
+    while(shift--){
+        result = result * large_num(2);
+    }
+
+    return result;
 }
 
 large_num large_num::operator>>(const large_num &other) const{
-    // tmp
-    return *this;
+    if (other.is_negative()){
+        throw std::out_of_range("You cannot shift by a negative number");
+    }
+    if ((*this).is_negative()){
+        return ~(~*this >> other);
+    }
+
+    large_num result = *this;
+    large_num shift = other;
+    while(shift--){
+        result = result / large_num(2);
+    }
+    
+    return result;
 }
+
+large_num large_num::operator&=(const large_num &other){
+    return *this = *this & other;
+}
+
+large_num large_num::operator|=(const large_num &other){
+    return *this = *this | other;
+}
+
+large_num large_num::operator^=(const large_num &other){
+    return *this = *this ^ other;
+}
+
+large_num large_num::operator+=(const large_num &other){
+    return *this = *this + other;
+}
+
+large_num large_num::operator-=(const large_num &other){
+    return *this = *this - other;
+}
+
+large_num large_num::operator*=(const large_num &other){
+    return *this = *this * other;
+}
+
+large_num large_num::operator/=(const large_num &other){
+    return *this = *this / other;
+}
+
+large_num large_num::operator%=(const large_num &other){
+    return *this = *this % other;
+}
+
+large_num large_num::operator<<=(const large_num &other){
+    return *this = *this << other;
+}
+
+large_num large_num::operator>>=(const large_num &other){
+    return *this = *this >> other;
+}
+
 
 // std::ostream &operator<<(std::ostream &os, const large_num &n){
 //     // tmp
