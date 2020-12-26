@@ -35,7 +35,7 @@ struct large_num{
         // large_num(large_num &&other) = default;
         template<std::integral T>
         large_num(T value){
-                static_assert(!std::is_same_v<T, bool>);
+                // static_assert(!std::is_same_v<T, bool>);
             constexpr bool may_need_sign_bit = std::is_unsigned_v<T>;
             constexpr size_t storage_size = divide_round_up(BITSIZEOF(T) + may_need_sign_bit, BITSIZEOF(chunk_type));
             storage = std::vector<chunk_type>(storage_size, 0);
@@ -81,6 +81,19 @@ struct large_num{
         large_num operator<<(const large_num &other) const;
         large_num operator>>(const large_num &other) const;
 
+        large_num operator&=(const large_num &other);
+        large_num operator|=(const large_num &other);
+        large_num operator^=(const large_num &other);
+
+        large_num operator+=(const large_num &other);
+        large_num operator-=(const large_num &other);
+        large_num operator*=(const large_num &other);
+        large_num operator/=(const large_num &other);
+        large_num operator%=(const large_num &other);
+
+        large_num operator<<=(const large_num &other);
+        large_num operator>>=(const large_num &other);
+
         std::strong_ordering operator<=>(const large_num &other) const;
 
         bool operator==(const large_num &other) const = default;
@@ -90,7 +103,7 @@ struct large_num{
 
         template<std::integral T>
         operator T() const{
-                static_assert(!std::is_same_v<T, bool>);
+                // static_assert(!std::is_same_v<T, bool>);
             T value = is_negative() ? ~static_cast<T>(0) : static_cast<T>(0);
             constexpr size_t chunks_to_read = divide_round_up(sizeof(T), sizeof(chunk_type));
             for (auto chunk : storage | std::views::take(chunks_to_read) | std::views::reverse){
@@ -102,9 +115,9 @@ struct large_num{
 
         // friend std::ostream &operator<<(std::ostream &os, const large_num &n);
     private:
-        // //enum class initialise_by_size;
-        // //static initialise_by_size by_size;
-        // //large_num(const size_t bitsize, const initialise_by_size tag);
+        // enum class initialise_by_size;
+        // static initialise_by_size by_size;
+        // large_num(const size_t bitsize, const initialise_by_size tag);
         bool get_bit(size_t n) const;
         void set_bit(size_t n, bool value);
         bool sign_bit() const;
@@ -114,7 +127,6 @@ struct large_num{
         void clean_up();
     private:
         std::vector<chunk_type> storage{0};
-        // size_t bitsize = 1; // to do: remove ---------- ---------- ---------- ----------
 };
 
 #endif
