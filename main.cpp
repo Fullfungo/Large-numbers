@@ -102,9 +102,11 @@
     class expected_exception: public std::exception{};
 
     #define expect_exception(expression) \
-    try{expression; throw std::runtime_error(#expression" did not throw an exception on line " + std::to_string(__LINE__));}\
-    catch(expected_exception &e[[maybe_unused]]){}\
-    catch(...){throw;}
+    try{\
+        expression; throw expected_exception{};\
+    }catch(expected_exception &e[[maybe_unused]]){\
+        throw std::runtime_error(#expression" did not throw an exception on line " + std::to_string(__LINE__));\
+    }catch(...){}
 
     #define undefined_value (-0)
 #else
@@ -144,21 +146,7 @@
 
 
 int main(int, char **){
-
-    print_large_num_content(large_num(33) - large_num(12));
-
-    // int a = static_cast<decltype(a)>(2);
-
-    // {unsigned char          a = large_num(-29); if (!(a == static_cast<unsigned char         >(-29))) throw std::runtime_error("a == static_cast<unsigned char         >(-29)"" is false on line " + std::to_string(__LINE__));}
-    // std::cout << "1 done\n";
-    // {unsigned short int     a = large_num(-29); if (!(a == static_cast<unsigned short int    >(-29))) throw std::runtime_error("a == static_cast<unsigned short int    >(-29)"" is false on line " + std::to_string(__LINE__));}
-    // std::cout << "2 done\n";
-    // {unsigned int           a = large_num(-29); if (!(a == static_cast<unsigned int          >(-29))) throw std::runtime_error("a == static_cast<unsigned int          >(-29)"" is false on line " + std::to_string(__LINE__));}
-    // std::cout << "3 done\n";
-    // {unsigned long int      a = large_num(-29); if (!(a == static_cast<unsigned long int     >(-29))) throw std::runtime_error("a == static_cast<unsigned long int     >(-29)"" is false on line " + std::to_string(__LINE__));}
-    // std::cout << "4 done\n";
-    // {unsigned long long int a = large_num(-29); if (!(a == static_cast<unsigned long long int>(-29))) throw std::runtime_error("a == static_cast<unsigned long long int>(-29)"" is false on line " + std::to_string(__LINE__));}
-    // std::cout << "5 done\n";
+    // tests for small (-128 < . < 128) numbers
 
 
     // simple construction
@@ -317,15 +305,15 @@ int main(int, char **){
     );
 
     test_named_inplace("multiplication",
-        test_arithmetic_binary(  0, *,   0,    0);
-        test_arithmetic_binary( 12, *,   0,    0);
-        test_arithmetic_binary(  0, *,  47,    0);
-        test_arithmetic_binary(-12, *,   0,    0);
-        test_arithmetic_binary(  0, *, -47,    0);
-        test_arithmetic_binary( 13, *,  18,  234);
-        test_arithmetic_binary(-13, *,  18, -234);
-        test_arithmetic_binary( 13, *, -18, -234);
-        test_arithmetic_binary(-13, *, -18,  234);
+        test_arithmetic_binary(  0, *,   0,   0);
+        test_arithmetic_binary( 12, *,   0,   0);
+        test_arithmetic_binary(  0, *,  47,   0);
+        test_arithmetic_binary(-12, *,   0,   0);
+        test_arithmetic_binary(  0, *, -47,   0);
+        test_arithmetic_binary( 13, *,   6,  78);
+        test_arithmetic_binary(-13, *,   6, -78);
+        test_arithmetic_binary( 13, *,  -6, -78);
+        test_arithmetic_binary(-13, *,  -6,  78);
     );
 
     test_named_inplace("division",
@@ -420,7 +408,7 @@ int main(int, char **){
         test_arithmetic_binary(-15, >>,   3, -2);
     );
 
-
+/*
     // arithmetic + assignment
     test_named_inplace("summation assignment",
         ;
@@ -481,7 +469,7 @@ int main(int, char **){
     test_named_inplace("reading from an input",
         ;
     );
-
+*/
 
     return 0;
 }
