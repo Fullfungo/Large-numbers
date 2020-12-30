@@ -210,6 +210,8 @@ int main(int, char **){
         test_comparison(0  , +42);
         test_comparison(-39, 0  );
         test_comparison(0  , -42);
+        test_comparison(+39, +39);
+        test_comparison(-42, -42);
         test_comparison(+39, +42);
         test_comparison(+39, -42);
         test_comparison(-39, +42);

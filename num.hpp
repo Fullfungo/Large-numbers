@@ -126,7 +126,7 @@ struct large_num{
         bool is_positive() const;
         void clean_up();
     private:
-        std::vector<chunk_type> storage{0};
+        std::vector<chunk_type> storage{0,};
 };
 
 #endif
