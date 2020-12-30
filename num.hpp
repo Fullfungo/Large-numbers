@@ -9,9 +9,35 @@
 
 #define BITSIZEOF(T) sizeof(T) * __CHAR_BIT__
 
-// struct large_num;
+#define APPLY_TO_ARITHMETIC_OPERATORS(f)\
+f(&) \
+f(|) \
+f(^) \
+f(+) \
+f(-) \
+f(*) \
+f(/) \
+f(%) \
+f(<<) \
+f(>>)
 
-// std::ostream &operator<<(std::ostream &os, const large_num &n);
+#define APPLY_TO_ARITHMETIC_ASSIGNMENT_OPERATORS(f)\
+f(&=) \
+f(|=) \
+f(^=) \
+f(+=) \
+f(-=) \
+f(*=) \
+f(/=) \
+f(%=) \
+f(<<=) \
+f(>>=)
+
+
+struct large_num;
+
+std::ostream &operator<<(std::ostream &os, const large_num &n);
+std::istream &operator>>(std::istream &is, const large_num &n);
 
 #define PRIVATE_ACCESS 0
 
@@ -19,45 +45,39 @@
     #define private public
 #endif
 
-// helper function
-constexpr size_t divide_round_up(size_t a, size_t b) noexcept{
-    return a / b + static_cast<bool>(a % b);
-}
+// // helper function
+// constexpr size_t divide_round_up(size_t a, size_t b) noexcept{
+//     return a / b + static_cast<bool>(a % b);
+// }
 
 struct large_num{
-    using chunk_type = uint_least8_t; // want: change to uint_fast8_t
-    static_assert(std::is_unsigned_v<chunk_type>);
-    static constexpr size_t bits_per_chunk = BITSIZEOF(chunk_type);
+    using byte_type = unsigned char; // want: change to uint_fast8_t [or not]
+    static_assert(sizeof(byte_type) == 1 && std::is_unsigned_v<byte_type>);
+    static constexpr size_t bits_per_byte = BITSIZEOF(byte_type);
 
     public:
-        explicit large_num() = default;
-        // large_num(const large_num &other) = default;
-        // large_num(large_num &&other) = default;
-        template<std::integral T>
-        large_num(T value){
-                // static_assert(!std::is_same_v<T, bool>);
-            constexpr bool may_need_sign_bit = std::is_unsigned_v<T>;
-            constexpr size_t storage_size = divide_round_up(BITSIZEOF(T) + may_need_sign_bit, BITSIZEOF(chunk_type));
-            storage = std::vector<chunk_type>(storage_size, 0);
-            // bitsize = BITSIZEOF(T);
-            constexpr chunk_type chunk_mask = static_cast<chunk_type>(~0);
-            for (auto &chunk : storage){
-                // assumes every standard integral type has a size of power of 2 bytes and chunk_type is the smallest (bad)
-                chunk = value & chunk_mask;
-                value >>= bits_per_chunk;
-            }
-
-            clean_up();
-
-            return;
-        }
+        large_num() = default;
+        large_num(const large_num&) = default;
+        large_num(large_num&&) = default;
+        large_num &operator=(const large_num&) = default;
+        large_num &operator=(large_num&&) = default;
 
         large_num(bool value);
 
-        // large_num &operator=(const large_num &other) = default;
-        // large_num &operator=(large_num &&other) = default;
-        // template<std::integral T>
-        // large_num &operator=(const T v);
+        template<std::integral T>
+        large_num(T value){
+            constexpr bool may_need_sign_bit = std::is_unsigned_v<T>;
+            constexpr size_t storage_size = sizeof(T) + may_need_sign_bit;
+            storage = std::vector<byte_type>(storage_size, 0);
+
+            for (auto &byte : storage){
+                byte = value;
+                value >>= bits_per_byte;
+            }
+
+            clean_up();
+        }
+
 
         large_num operator~() const;
         large_num operator&(const large_num &other) const;
@@ -81,40 +101,42 @@ struct large_num{
         large_num operator<<(const large_num &other) const;
         large_num operator>>(const large_num &other) const;
 
-        large_num operator&=(const large_num &other);
-        large_num operator|=(const large_num &other);
-        large_num operator^=(const large_num &other);
+        large_num &operator&=(const large_num &other);
+        large_num &operator|=(const large_num &other);
+        large_num &operator^=(const large_num &other);
 
-        large_num operator+=(const large_num &other);
-        large_num operator-=(const large_num &other);
-        large_num operator*=(const large_num &other);
-        large_num operator/=(const large_num &other);
-        large_num operator%=(const large_num &other);
+        large_num &operator+=(const large_num &other);
+        large_num &operator-=(const large_num &other);
+        large_num &operator*=(const large_num &other);
+        large_num &operator/=(const large_num &other);
+        large_num &operator%=(const large_num &other);
 
-        large_num operator<<=(const large_num &other);
-        large_num operator>>=(const large_num &other);
+        large_num &operator<<=(const large_num &other);
+        large_num &operator>>=(const large_num &other);
 
         std::strong_ordering operator<=>(const large_num &other) const;
 
         bool operator==(const large_num &other) const = default;
-        // bool operator!=(const large_num &other) const; // candidate for deletion
 
         operator bool() const;
 
         template<std::integral T>
         operator T() const{
-                // static_assert(!std::is_same_v<T, bool>);
-            T value = is_negative() ? ~static_cast<T>(0) : static_cast<T>(0);
-            constexpr size_t chunks_to_read = divide_round_up(sizeof(T), sizeof(chunk_type));
-            for (auto chunk : storage | std::views::take(chunks_to_read) | std::views::reverse){
-                value <<= bits_per_chunk;
-                value |= chunk;
+            T value = is_negative() ? -1 : 0; // fill with sign bits
+            constexpr size_t bytes_to_read = sizeof(T);
+
+            for (auto byte : storage | std::views::take(bytes_to_read) | std::views::reverse){
+                value <<= bits_per_byte;
+                value |= byte;
             }
+            
             return value;
         }
 
-        // friend std::ostream &operator<<(std::ostream &os, const large_num &n);
+        friend std::ostream &operator<<(std::ostream &os, const large_num &n);
+        friend std::istream &operator>>(std::istream &is, const large_num &n);
     private:
+        void expand_upto(size_t n);
         // enum class initialise_by_size;
         // static initialise_by_size by_size;
         // large_num(const size_t bitsize, const initialise_by_size tag);
@@ -126,7 +148,50 @@ struct large_num{
         bool is_positive() const;
         void clean_up();
     private:
-        std::vector<chunk_type> storage{0,};
+        std::vector<byte_type> storage{0,};
 };
+
+
+template <std::integral T>
+std::strong_ordering operator<=>(const large_num v, const T u){
+    return v <=> static_cast<large_num>(u);
+}
+
+
+#define DEFINE_ARITHMETIC_OPERATION_LEFT(operation)\
+template <std::integral T> \
+large_num operator operation(const T v, const large_num u){ \
+    return static_cast<large_num>(v) operation u; \
+}
+
+APPLY_TO_ARITHMETIC_OPERATORS(DEFINE_ARITHMETIC_OPERATION_LEFT)
+
+
+#define DEFINE_ARITHMETIC_OPERATION_RIGHT(operation)\
+template <std::integral T> \
+large_num operator operation(const large_num v, const T u){ \
+    return v operation static_cast<large_num>(u); \
+}
+
+APPLY_TO_ARITHMETIC_OPERATORS(DEFINE_ARITHMETIC_OPERATION_RIGHT)
+
+
+#define DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_LEFT(operation)\
+template <std::integral T> \
+T &operator operation(T &v, const large_num u){ \
+    return v operation static_cast<T>(u); \
+}
+
+APPLY_TO_ARITHMETIC_ASSIGNMENT_OPERATORS(DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_LEFT)
+
+
+#define DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_RIGHT(operation)\
+template <std::integral T> \
+large_num &operator operation(large_num &v, const T u){ \
+    return v operation static_cast<large_num>(u); \
+}
+
+APPLY_TO_ARITHMETIC_ASSIGNMENT_OPERATORS(DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_RIGHT)
+
 
 #endif
