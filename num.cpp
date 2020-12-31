@@ -176,17 +176,37 @@ large_num large_num::operator<<(const large_num &other) const{
         throw std::out_of_range("You cannot shift by a negative number"); /* +UB+ */
     }
 
-    // size_t additional_bytes = other / static_cast<large_num>(bits_per_byte) + static_cast<large_num>(static_cast<bool>(other % static_cast<large_num>(bits_per_byte)));
-    // large_num result = *this;
-    // result.expand_upto(result.storage.size() + additional_bytes);
-    
-
+    size_t additional_bytes = other / static_cast<large_num>(bits_per_byte) + static_cast<large_num>(static_cast<bool>(other % static_cast<large_num>(bits_per_byte)));
     large_num result = *this;
-    large_num shift = other;
-    while(shift--){
-        result = result * large_num(2);
+    size_t initial_size = result.storage.size();
+    result.expand_upto(result.storage.size() + additional_bytes);
+    size_t bytes_shifted = other / bits_per_byte;
+    [[maybe_unused]]size_t bits_shifted  = other % bits_per_byte;
+    
+    // to be improved ---------- ---------- ---------- ----------
+    for (size_t i = initial_size; i --> 0;){
+        result.storage.at(i + bytes_shifted) = result.storage.at(i);
     }
-
+    for (size_t i = 0; i < bytes_shifted; ++i){
+        result.storage.at(i) = 0;
+    }
+    byte_type carry;
+    byte_type carry_prev = 0;
+    for (size_t i = bytes_shifted; i < result.storage.size(); ++i){
+        carry = result.storage.at(i) >> (bits_per_byte - bits_shifted);
+        result.storage.at(i) <<= bits_shifted;
+        result.storage.at(i) |= carry_prev;
+        carry_prev = carry;
+    }
+    
+    
+//tmp
+    // large_num result = *this;
+    // large_num shift = other;
+    // while(shift--){
+    //     result = result * large_num(2);
+    // }
+    result.clean_up();
     return result;
 }
 
@@ -307,15 +327,31 @@ large_num::operator bool() const{
 
 
 std::ostream &operator<<(std::ostream &os, const large_num &n){
-    // tmp
-    os << "Just a long number at " << &n << ".\n";
+    large_num num = n;
+    if (n < 0){
+        os << '-';
+        num = -n;
+    }
+    std::vector<char> reversed_digits;
+    while (num){
+        char digit = '0' + num % 10;
+        reversed_digits.push_back(digit);
+        num /= 10;
+    }
+    for (auto digit: std::ranges::reverse_view(reversed_digits)){
+        os << digit;
+    }
     return os;
+    // // tmp
+    // os << "Just a long number at " << &n << ".\n";
+    // return os;
 }
 
 std::istream &operator>>(std::istream &is, const large_num &n){
     // tmp
     return is;
 }
+
 
 void large_num::expand_upto(size_t n){
     const size_t old_size = storage.size();
