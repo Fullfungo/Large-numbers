@@ -157,6 +157,16 @@ std::strong_ordering operator<=>(const large_num v, const T u){
     return v <=> static_cast<large_num>(u);
 }
 
+template <std::integral T>
+bool operator==(const large_num v, const T u){
+    return v == static_cast<large_num>(u);
+}
+
+template <std::integral T>
+bool operator==(const T v, const large_num u){
+    return static_cast<large_num>(v) == u;
+}
+
 
 #define DEFINE_ARITHMETIC_OPERATION_LEFT(operation)\
 template <std::integral T> \
