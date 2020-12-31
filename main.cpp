@@ -473,5 +473,14 @@ int main(int, char **){
     );
 */
 
+    test_named_inplace("some name",
+        large_num factorial = 1;
+        for (size_t i = 1; i <= 55; ++i){
+            factorial *= i;
+            std::cout << factorial << '\n';
+        }
+        // 55! = 12696403353658275925965100847566516959580321051449436762275840000000000000
+    );
+
     return 0;
 }
