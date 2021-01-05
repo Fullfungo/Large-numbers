@@ -2,6 +2,73 @@
 
 large_num::large_num(bool value): storage(std::vector<byte_type>{value}){}
 
+template <typename T>
+constexpr size_t exponent10_max = std::numeric_limits<T>::digits10;
+
+template <typename T>
+constexpr T power10_max_calc(){
+    T power10 = 1;
+    for (size_t i = 0; i < exponent10_max<T>; ++i){
+        power10 *= 10;
+    }
+    return power10;
+}
+
+template <typename T>
+constexpr T power10_max = power10_max_calc<T>();
+
+
+constexpr size_t             digits_max = exponent10_max<unsigned long long>;
+constexpr unsigned long long power_max  = power10_max   <unsigned long long>;
+
+large_num::large_num(const std::string &number_representation){
+    if (number_representation.empty())
+        return;
+
+    char first_symbol = number_representation.front();
+    bool has_sign;
+    bool is_negative;
+
+    if (first_symbol == '+'){
+        has_sign    = true;
+        is_negative = false;
+    }else if (first_symbol == '-'){
+        has_sign    = true;
+        is_negative = true;
+    }else{
+        has_sign    = false;
+        is_negative = false;
+    }
+
+    if (std::any_of(number_representation.begin(), number_representation.end(), [](char c){return isspace(c);}))
+        throw std::runtime_error("to be done ----------");
+
+    #define div_round_up(a, b) (a - 1)/(b) + 1
+    #define mod_round_up(a, b) (a - 1)%(b) + 1
+
+    size_t number_of_loose_digits_at_the_start = (number_representation.size() - has_sign) % digits_max;
+
+    //bool has_left_over_digits = number_of_loose_digits_at_the_start;
+
+    size_t number_of_complete_parts = (number_representation.size() - has_sign) / digits_max;
+
+    if (number_of_loose_digits_at_the_start)
+        *this = std::stoull(number_representation.substr(has_sign, number_of_loose_digits_at_the_start));
+
+    for (size_t part_index = 0; part_index < number_of_complete_parts; ++part_index){
+        *this *= power_max;
+        *this += std::stoull(number_representation.substr(part_index * digits_max + number_of_loose_digits_at_the_start + has_sign, digits_max));
+    }
+
+    if (is_negative)
+        *this = -*this;
+
+    return;
+}
+
+
+large_num::large_num(const char *number_representation): large_num(std::string(number_representation)){}
+
 
 large_num large_num::operator~() const{
     large_num res = *this;
@@ -89,7 +156,7 @@ large_num large_num::operator--(int){
 
 //-----
 using byte_type = large_num::byte_type;
-constexpr std::pair<byte_type, byte_type> byte_addition(byte_type a, byte_type b, byte_type carry) noexcept(true){
+constexpr std::pair<byte_type, byte_type> byte_addition(byte_type a, byte_type b, byte_type carry = 0) noexcept(true){
     byte_type lower_byte = a + b;
     byte_type upper_byte = (lower_byte < a)? 1: 0; // wrap-over occured
     if (carry && lower_byte == static_cast<byte_type>(-1)){
@@ -128,46 +195,156 @@ large_num large_num::operator-(const large_num &other) const{
     return *this + -other;
 }
 
+
+//----- to be fixed
+using byte_type = large_num::byte_type;
+constexpr std::pair<byte_type, byte_type> byte_multiplication(const byte_type a, const byte_type b) noexcept(true){
+    using two_byte = unsigned short;
+    two_byte prod = (two_byte)a * (two_byte)b;
+
+    return std::make_pair((byte_type)(prod), (byte_type)(prod >> 8));
+    // constexpr size_t upper_halfbyte_size = bits_per_byte / 2;
+    // constexpr size_t lower_halfbyte_size = bits_per_byte - upper_halfbyte_size;
+
+    // constexpr byte_type lower_halfbyte_mask = (1 << lower_halfbyte_size) - 1;
+
+    // byte_type a_upper_halfbyte = a >> lower_halfbyte_size;
+    // byte_type a_lower_halfbyte = a &  lower_halfbyte_mask;
+    // byte_type b_upper_halfbyte = b >> lower_halfbyte_size;
+    // byte_type b_lower_halfbyte = b &  lower_halfbyte_mask;
+
+    // // (10 a + b)(10 c + d) = 100 ac + 10 (ad + bc) + bd = 100 ac + 10 ((a+b)(c+d)-ac-bd) + bd
+    // // byte_type result = top_part << (2 * lower_halfbyte_size) + middle_part << lower_halfbyte_size + bottom_part;
+    // byte_type top_part    = a_upper_halfbyte * b_upper_halfbyte;
+    // byte_type bottom_part = a_lower_halfbyte * b_lower_halfbyte;
+    // // bad part
+    // byte_type middle_part = (a_upper_halfbyte + a_lower_halfbyte) * (b_upper_halfbyte + b_lower_halfbyte) - (top_part + bottom_part); // fix this
+
+    // byte_type middle_part_lower_halfbyte = middle_part &  lower_halfbyte_mask;
+    // byte_type middle_part_upper_halfbyte = middle_part >> lower_halfbyte_mask;
+
+    // auto [lower_byte, carry] = byte_addition(bottom_part, middle_part_lower_halfbyte << lower_halfbyte_size);
+    // auto [upper_byte, _]     = byte_addition(top_part, middle_part_upper_halfbyte, carry);
+
+    // return std::pair(lower_byte, upper_byte);
+}
+//-----
+
+
 large_num large_num::operator*(const large_num &other) const{
     if (other.is_negative()){
         return -(*this * -other);
     }
 
-    const large_num &multiplier = *this;
-    large_num multiplicand = other;
-    large_num product;
+    large_num result;
 
-    while (multiplicand--){
-        product = product + multiplier;
+    for (size_t i = other.storage.size() * bits_per_byte; i --> 0;){
+        result <<= 1;
+        if (other.get_bit(i)){
+            result += *this;
+        }
     }
+
+    return result;
+
+    // const large_num &multiplier = *this;
+    // large_num multiplicand = other;
+    // large_num product;
+
+    // while (multiplicand--){
+    //     product = product + multiplier;
+    // }
     
-    return product;
+    // return product;
 }
 
-large_num large_num::operator/(const large_num &other) const{
+large_num large_num::abs() const{
+    if (is_negative()){
+        return -*this;
+    }else{
+        return *this;
+    }
+}
+
+std::pair<large_num, large_num> large_num::divmod(const large_num &other) const{
+    // https://en.wikipedia.org/wiki/Division_algorithm
     if (other.is_zero()){
         throw std::out_of_range("You cannot divide by 0"); /* +UB+ */
     }
+    large_num N = (*this).abs();
+    large_num D = other.abs();
+    large_num Q;
+    large_num R;
+    for (size_t i = N.storage.size() * bits_per_byte; i --> 0;){
+        R <<= 1;
+        R |=  N.get_bit(i);
+        if (R >= D){
+            R -= D;
+            //Q.set_bit(i, 1);
+            Q |= large_num(1) << i;
+        }
+    }
+
     if ((*this).is_negative()){
-        return -(-*this / other);
+        Q = -Q;
+        R = -R;
     }
     if (other.is_negative()){
-        return -(*this / -other);
+        Q = -Q;
     }
+    return std::pair(Q, R);
+}
 
-    large_num dividend = *this;
-    const large_num &divisor = other;
-    large_num quotient;
+large_num large_num::operator/(const large_num &other) const{
+    return divmod(other).first;
+    // if (other.is_zero()){
+    //     throw std::out_of_range("You cannot divide by 0"); /* +UB+ */
+    // }
+    // if ((*this).is_negative()){
+    //     return -(-*this / other);
+    // }
+    // if (other.is_negative()){
+    //     return -(*this / -other);
+    // }
 
-    while (!((dividend = dividend - divisor).is_negative())){
-        ++quotient;
-    }
+    // if (*this < other) // idk ----------
+    //     return 0;
+
+    // large_num result;
+    // large_num power = 1;
+    // large_num divisor = other;
+
+    // while (divisor <= *this){
+    //     power   <<= 1;
+    //     divisor <<= 1;
+    // }
+
+    // divisor >>= 1;
+    // power   >>= 1;
+    // result += power;
+
+    // while (power && divisor != *this){
+    //     power >>= 1;
+
+    // }
+
+    // return result;
+
+
+    // // large_num dividend = *this;
+    // // const large_num &divisor = other;
+    // // large_num quotient;
+
+    // // while (!((dividend = dividend - divisor).is_negative())){
+    // //     ++quotient;
+    // // }
     
-    return quotient;
+    // // return quotient;
 }
 
 large_num large_num::operator%(const large_num &other) const{
-    return *this - (*this / other) * other;
+    return divmod(other).second;
+    // return *this - (*this / other) * other;
 }
 
 
@@ -176,27 +353,37 @@ large_num large_num::operator<<(const large_num &other) const{
         throw std::out_of_range("You cannot shift by a negative number"); /* +UB+ */
     }
 
-    size_t additional_bytes = other / static_cast<large_num>(bits_per_byte) + static_cast<large_num>(static_cast<bool>(other % static_cast<large_num>(bits_per_byte)));
+    //size_t additional_bytes = other / static_cast<large_num>(bits_per_byte) + static_cast<large_num>(static_cast<bool>(other % static_cast<large_num>(bits_per_byte)));
     large_num result = *this;
     size_t initial_size = result.storage.size();
-    result.expand_upto(result.storage.size() + additional_bytes);
-    size_t bytes_shifted = other / bits_per_byte;
-    [[maybe_unused]]size_t bits_shifted  = other % bits_per_byte;
+
+    size_t bytes_shifted = static_cast<size_t>(other) / bits_per_byte; // fix for numbers between __SIZE_T_MAX__ and 8 * __SIZE_T_MAX__ - 1
+    size_t bits_shifted  = static_cast<size_t>(other) % bits_per_byte;
+
+    size_t additional_bytes = bytes_shifted + static_cast<bool>(bits_shifted);
+
+    size_t new_size = initial_size + additional_bytes;
+
+    result.expand_upto(new_size);
     
     // to be improved ---------- ---------- ---------- ----------
-    for (size_t i = initial_size; i --> 0;){
-        result.storage.at(i + bytes_shifted) = result.storage.at(i);
+    if (bytes_shifted){
+        for (size_t i = initial_size; i --> 0;){
+            result.storage.at(i + bytes_shifted) = result.storage.at(i);
+        }
+        for (size_t i = 0; i < bytes_shifted; ++i){
+            result.storage.at(i) = 0;
+        }
     }
-    for (size_t i = 0; i < bytes_shifted; ++i){
-        result.storage.at(i) = 0;
-    }
-    byte_type carry;
-    byte_type carry_prev = 0;
-    for (size_t i = bytes_shifted; i < result.storage.size(); ++i){
-        carry = result.storage.at(i) >> (bits_per_byte - bits_shifted);
-        result.storage.at(i) <<= bits_shifted;
-        result.storage.at(i) |= carry_prev;
-        carry_prev = carry;
+    if (bits_shifted){
+        byte_type carry;
+        byte_type carry_prev = 0;
+        for (size_t i = bytes_shifted; i < new_size; ++i){
+            carry = result.storage.at(i) >> (bits_per_byte - bits_shifted);
+            result.storage.at(i) <<= bits_shifted;
+            result.storage.at(i) |= carry_prev;
+            carry_prev = carry;
+        }
     }
     
     
@@ -326,29 +513,65 @@ large_num::operator bool() const{
 }
 
 
-std::ostream &operator<<(std::ostream &os, const large_num &n){
-    large_num num = n;
-    if (n < 0){
-        os << '-';
-        num = -n;
+large_num::operator std::string() const{ // reimplement using to_string on unsigned long long chunks
+    std::string s;
+    large_num num = *this;
+
+    bool is_negative;
+
+    if (num.is_negative()){
+        is_negative = true;
+        // s.append('-');
+        num = -num;
+    }else{
+        is_negative = false;
     }
-    std::vector<char> reversed_digits;
-    while (num){
-        char digit = '0' + num % 10;
+
+    std::string reversed_digits;
+    do {
+        auto [upper_digits, lowest_digit] = num.divmod(10);
+        char digit = '0' + static_cast<char>(lowest_digit);
         reversed_digits.push_back(digit);
-        num /= 10;
+        num = std::move(upper_digits);
+    }while (num);
+
+    std::reverse(reversed_digits.begin(), reversed_digits.end());
+    if (is_negative){
+        reversed_digits.insert(0, 1, '-');
     }
-    for (auto digit: std::ranges::reverse_view(reversed_digits)){
-        os << digit;
-    }
-    return os;
-    // // tmp
-    // os << "Just a long number at " << &n << ".\n";
+
+    return reversed_digits;
+}
+
+
+std::ostream &operator<<(std::ostream &os, const large_num &n){
+    return os << std::string(n);
+    // large_num num = n;
+
+    // if (num.is_negative()){
+    //     os << '-';
+    //     num = -num;
+    // }
+
+    // std::vector<char> reversed_digits;
+    // do {
+    //     auto [upper_digits, lowest_digit] = num.divmod(10);
+    //     char digit = '0' + static_cast<char>(lowest_digit);
+    //     reversed_digits.push_back(digit);
+    //     num = std::move(upper_digits);
+    // }while (num);
+
+    // for (auto digit: std::ranges::reverse_view(reversed_digits)){
+    //     os << digit;
+    // }
+
     // return os;
 }
 
-std::istream &operator>>(std::istream &is, const large_num &n){
-    // tmp
+std::istream &operator>>(std::istream &is, large_num &n){
+    std::string number_representation;
+    is >> number_representation;
+    n = large_num(number_representation);
     return is;
 }
 
@@ -378,24 +601,26 @@ bool large_num::get_bit(size_t n) const{
     return bit;
 }
 
-void large_num::set_bit(const size_t n, bool value){ // add: extention on past-the-end bit setting ---------- ---------- ----------
-    if (get_bit(n) == value){
-        return;
-    }
-    size_t byte_index = n / bits_per_byte;
-    size_t bit_index  = n % bits_per_byte;
+// void large_num::set_bit(const size_t n, bool value){ // add: extention on past-the-end bit setting ---------- ---------- ----------
+//     if (get_bit(n) == value){
+//         return;
+//     }
+//     size_t byte_index = n / bits_per_byte;
+//     size_t bit_index  = n % bits_per_byte;
 
-    byte_type &byte = storage.at(byte_index);
-    size_t bit_mask = (1 << bit_index);
+//     expand_upto(byte_index + 1);
 
-    if (value){
-        byte &= bit_mask;
-    }else{
-        byte |= ~bit_mask;
-    }
+//     byte_type &byte = storage.at(byte_index);
+//     size_t bit_mask = (1 << bit_index);
+
+//     if (value){
+//         byte &= bit_mask;
+//     }else{
+//         byte |= ~bit_mask;
+//     }
     
-    clean_up();
-}
+//     clean_up();
+// }
 
 bool large_num::sign_bit() const{
     size_t bit_index = storage.size() * bits_per_byte - 1;
@@ -416,12 +641,25 @@ bool large_num::is_positive() const{
 }
 
 void large_num::clean_up(){
+    byte_type sign_byte = storage.back();
+    bool sign_bit_value;
+    if (sign_byte == static_cast<byte_type>(-1)){
+        sign_bit_value = true;
+    }else if (sign_byte == static_cast<byte_type>(0)){
+        sign_bit_value = false;
+    }else{
+        return;
+    }
+    
     size_t new_size = storage.size();
+    byte_type current_byte;
+    byte_type lower_byte = storage.at(new_size - 1);
     while (new_size > 1){
-        byte_type byte = storage.at(new_size - 1);
-        bool lower_byte_msb = get_bit((new_size - 1) * bits_per_byte - 1);
-        if ((byte == static_cast<byte_type>( 0) && lower_byte_msb == 0)||
-            (byte == static_cast<byte_type>(-1) && lower_byte_msb == 1)){
+        current_byte = lower_byte;
+        lower_byte   = storage.at(new_size - 2);
+        //byte_type byte = storage.at(new_size - 1);
+        //bool lower_byte_msb = get_bit((new_size - 1) * bits_per_byte - 1);
+        if (current_byte == sign_byte && (lower_byte >> (bits_per_byte - 1)) == sign_bit_value){
             --new_size;
         }else{
             break;
@@ -429,4 +667,12 @@ void large_num::clean_up(){
     }
 
     storage.resize(new_size);
+}
+
+large_num abs(const large_num& n){
+    return n.abs();
+}
+
+std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b){
+    return a.divmod(b);
 }

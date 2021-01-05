@@ -3,9 +3,12 @@
 
 #include <vector>
 #include <iostream>
-#include <iostream>
 #include <concepts>
 #include <ranges>
+#include <cassert>
+#include <limits>
+#include <algorithm>
+
 
 #define BITSIZEOF(T) sizeof(T) * __CHAR_BIT__
 
@@ -37,9 +40,9 @@ f(>>=)
 struct large_num;
 
 std::ostream &operator<<(std::ostream &os, const large_num &n);
-std::istream &operator>>(std::istream &is, const large_num &n);
+std::istream &operator>>(std::istream &is, large_num &n);
 
-#define PRIVATE_ACCESS 0
+#define PRIVATE_ACCESS 1
 
 #if PRIVATE_ACCESS
     #define private public
@@ -57,10 +60,10 @@ struct large_num{
 
     public:
         large_num() = default;
-        large_num(const large_num&) = default;
-        large_num(large_num&&) = default;
-        large_num &operator=(const large_num&) = default;
-        large_num &operator=(large_num&&) = default;
+        large_num(const large_num &) = default;
+        large_num(large_num &&) = default;
+        large_num &operator=(const large_num &) = default;
+        large_num &operator=(large_num &&) = default;
 
         large_num(bool value);
 
@@ -78,6 +81,8 @@ struct large_num{
             clean_up();
         }
 
+        explicit large_num(const std::string &number_representation);
+        explicit large_num(const char *number_representation);
 
         large_num operator~() const;
         large_num operator&(const large_num &other) const;
@@ -120,6 +125,8 @@ struct large_num{
 
         operator bool() const;
 
+        explicit operator std::string() const;
+
         template<std::integral T>
         operator T() const{
             T value = is_negative() ? -1 : 0; // fill with sign bits
@@ -134,14 +141,16 @@ struct large_num{
         }
 
         friend std::ostream &operator<<(std::ostream &os, const large_num &n);
-        friend std::istream &operator>>(std::istream &is, const large_num &n);
+        friend std::istream &operator>>(std::istream &is, large_num &n);
     private:
+        std::pair<large_num, large_num> divmod(const large_num &other) const;
+        large_num abs() const;
         void expand_upto(size_t n);
         // enum class initialise_by_size;
         // static initialise_by_size by_size;
         // large_num(const size_t bitsize, const initialise_by_size tag);
         bool get_bit(size_t n) const;
-        void set_bit(size_t n, bool value);
+        // void set_bit(size_t n, bool value);
         bool sign_bit() const;
         bool is_negative() const;
         bool is_zero() const;
@@ -203,5 +212,9 @@ large_num &operator operation(large_num &v, const T u){ \
 
 APPLY_TO_ARITHMETIC_ASSIGNMENT_OPERATORS(DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_RIGHT)
 
+
+large_num abs(const large_num& n);
+
+std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b);
 
 #endif
