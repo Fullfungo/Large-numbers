@@ -5,6 +5,8 @@
 #include <string>
 #include <ctime>
 
+#define SET_SEED 0
+
 #define RUN_TESTS 1
 
 #if RUN_TESTS
@@ -72,7 +74,7 @@
 
     // #define test(function) tester(function, #function)
     // #define test_inplace(function_body) tester([](){function_body}, "\b")
-    #define test_named_inplace(name, function_body) tester([](){function_body return 0;}, name)
+    #define test_named_inplace(name, function_body) tester([&](){function_body return 0;}, name)
     #define check(expression) if (!(expression)) throw std::runtime_error(#expression" is false on line " + std::to_string(__LINE__))
     #define check_with_prerequisite(prerequisite, expression) if (prerequisite; !(expression)) throw std::runtime_error(#expression" is false on line " + std::to_string(__LINE__))
 
@@ -147,6 +149,12 @@
 
 
 int main(int, char **){
+    #if SET_SEED
+        auto seed = 1609885653;
+    #else
+        auto seed = std::time(nullptr);
+    #endif
+    std::srand(seed);
     // tests for small (-128 < . < 128) numbers
 
 
@@ -479,38 +487,42 @@ int main(int, char **){
         check(static_cast<std::string>(static_cast<large_num>("0"))  == "0");
         check(static_cast<std::string>(static_cast<large_num>("+0")) == "0");
         check(static_cast<std::string>(static_cast<large_num>("-0")) == "0");
+        std::cout << "[seed: " << seed << "] ";
         {
             std::string s;
-            std::cout << '\n';
-            for (size_t i = 1; i < 100; ++i){
-                s.push_back('0' + std::rand() % 10);
-                std::cout << i << ": " << s << '\n';
+            s += '1' + std::rand() % 9;
+            // std::cout << '\n';
+            for (size_t i = 1; i < 50; ++i){
+                // std::cout << i << ": " << s << '\n';
                 check(static_cast<std::string>(static_cast<large_num>(s)) == s);
+                s.push_back('0' + std::rand() % 10);
             }
         }
         {
             std::string s;
-            std::cout << '\n';
-            for (size_t i = 1; i < 100; ++i){
-                s.push_back('0' + std::rand() % 10);
-                std::cout << i << ": " << '-' + s << '\n';
+            s += '1' + std::rand() % 9;
+            // std::cout << '\n';
+            for (size_t i = 1; i < 50; ++i){
+                // std::cout << i << ": " << '-' + s << '\n';
                 check(static_cast<std::string>(static_cast<large_num>('-' + s)) == '-' + s);
+                s.push_back('0' + std::rand() % 10);
             }
         }
         {
             std::string s;
-            std::cout << '\n';
-            for (size_t i = 1; i < 100; ++i){
-                s.push_back('0' + std::rand() % 10);
-                std::cout << i << ": " << '+' + s << '\n';
+            s += '1' + std::rand() % 9;
+            // std::cout << '\n';
+            for (size_t i = 1; i < 50; ++i){
+                // std::cout << i << ": " << '+' + s << '\n';
                 check(static_cast<std::string>(static_cast<large_num>('+' + s)) == s);
+                s.push_back('0' + std::rand() % 10);
             }
         }
     );
 
     test_named_inplace("alternating fibonacci",
-            auto time1 = std::time(nullptr);
-        std::cout << '\n';
+            auto time1[[maybe_unused]] = std::time(nullptr);
+        //std::cout << '\n';
         large_num factorial = 1;
         for (intmax_t i = 1; i <= 100; ++i){
             factorial *= -i;
@@ -521,8 +533,8 @@ int main(int, char **){
             factorial /= -i;
             //std::cout << i-1 << "! = " << factorial << '\n';
         }
-            auto time2 = std::time(nullptr);
-            std::cout << time2 - time1 << '\n';
+            auto time2[[maybe_unused]] = std::time(nullptr);
+            //std::cout << time2 - time1 << '\n';
     );
 
     return 0;
