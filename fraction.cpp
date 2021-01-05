@@ -79,3 +79,24 @@ void large_fraction::reduce(){
     }
     return;
 }
+
+std::ostream &operator<<(std::ostream &os, const large_fraction &f){
+    os << f.numerator;
+    if (f.denominator > 1)
+        os << '/' << f.denominator;
+    return os;
+}
+
+std::istream &operator>>(std::istream &is, large_fraction &f){
+    std::string s;
+    is >> s;
+    size_t delimiter_position = s.find('/');
+    if (delimiter_position == std::string::npos){
+        f.numerator   = static_cast<large_num>(s);
+        f.denominator = static_cast<large_num>(1);
+    }else{
+        f.numerator   = static_cast<large_num>(s.substr(0, delimiter_position));
+        f.denominator = static_cast<large_num>(s.substr(delimiter_position + 1));
+    }
+    return is;
+}

@@ -3,6 +3,11 @@
 
 #include "num.hpp"
 
+class large_fraction;
+
+std::ostream &operator<<(std::ostream &os, const large_fraction &f);
+std::istream &operator>>(std::istream &is, large_fraction &f);
+
 class large_fraction{
     public:
         large_fraction() = default;

@@ -1,8 +1,9 @@
-#include "num.hpp"
+#include "fraction.hpp"
 //#include "overlow_detect.hpp"
 //#include <climits>
 #include <cassert>
 #include <string>
+#include <ctime>
 
 #define RUN_TESTS 1
 
@@ -473,13 +474,55 @@ int main(int, char **){
     );
 */
 
-    test_named_inplace("some name",
-        large_num factorial = 1;
-        for (size_t i = 1; i <= 55; ++i){
-            factorial *= i;
-            std::cout << factorial << '\n';
+    test_named_inplace("string conversions",
+        check(static_cast<std::string>(static_cast<large_num>(""))   == "0");
+        check(static_cast<std::string>(static_cast<large_num>("0"))  == "0");
+        check(static_cast<std::string>(static_cast<large_num>("+0")) == "0");
+        check(static_cast<std::string>(static_cast<large_num>("-0")) == "0");
+        {
+            std::string s;
+            std::cout << '\n';
+            for (size_t i = 1; i < 100; ++i){
+                s.push_back('0' + std::rand() % 10);
+                std::cout << i << ": " << s << '\n';
+                check(static_cast<std::string>(static_cast<large_num>(s)) == s);
+            }
         }
-        // 55! = 12696403353658275925965100847566516959580321051449436762275840000000000000
+        {
+            std::string s;
+            std::cout << '\n';
+            for (size_t i = 1; i < 100; ++i){
+                s.push_back('0' + std::rand() % 10);
+                std::cout << i << ": " << '-' + s << '\n';
+                check(static_cast<std::string>(static_cast<large_num>('-' + s)) == '-' + s);
+            }
+        }
+        {
+            std::string s;
+            std::cout << '\n';
+            for (size_t i = 1; i < 100; ++i){
+                s.push_back('0' + std::rand() % 10);
+                std::cout << i << ": " << '+' + s << '\n';
+                check(static_cast<std::string>(static_cast<large_num>('+' + s)) == s);
+            }
+        }
+    );
+
+    test_named_inplace("alternating fibonacci",
+            auto time1 = std::time(nullptr);
+        std::cout << '\n';
+        large_num factorial = 1;
+        for (intmax_t i = 1; i <= 100; ++i){
+            factorial *= -i;
+            //std::cout << i << "! = " << factorial << '\n';
+        }
+        
+        for (intmax_t i = 101; i --> 1;){
+            factorial /= -i;
+            //std::cout << i-1 << "! = " << factorial << '\n';
+        }
+            auto time2 = std::time(nullptr);
+            std::cout << time2 - time1 << '\n';
     );
 
     return 0;
