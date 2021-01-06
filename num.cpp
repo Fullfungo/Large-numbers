@@ -61,7 +61,7 @@ large_num::large_num(const std::string &number_representation){
     }
 
     if (is_negative)
-        *this = -*this;
+        negate();
 
     return;
 }
@@ -71,10 +71,9 @@ large_num::large_num(const char *number_representation): large_num(std::string(n
 
 
 large_num large_num::operator~() const{
-    large_num res = *this;
-    for (auto &part: res.storage)
-        part = ~part;
-    return res;
+    large_num result = *this;
+    result.invert();
+    return result;
 }
 
 large_num large_num::operator&(const large_num &other) const{
@@ -131,10 +130,12 @@ large_num large_num::operator+() const{
 }
 
 large_num large_num::operator-() const{
-    return ++~*this;
+    large_num result = *this;
+    result.negate();
+    return result;
 }
 
-large_num &large_num::operator++(){ // finish this: add extending storage
+large_num &large_num::operator++(){
     return *this += 1;
 }
 
@@ -271,8 +272,8 @@ std::pair<large_num, large_num> large_num::divmod(const large_num &other) const{
     if (other.is_zero()){
         throw std::out_of_range("You cannot divide by 0"); /* +UB+ */
     }
-    large_num N = (*this).abs();
-    large_num D = other.abs();
+    large_num N = ::abs(*this);
+    large_num D = ::abs(other);
     large_num Q;
     large_num R;
     for (size_t i = N.storage.size() * bits_per_byte; i --> 0;){
@@ -296,7 +297,7 @@ std::pair<large_num, large_num> large_num::divmod(const large_num &other) const{
 }
 
 large_num large_num::operator/(const large_num &other) const{
-    return divmod(other).first;
+    return ::divmod(*this, other).first;
     // if (other.is_zero()){
     //     throw std::out_of_range("You cannot divide by 0"); /* +UB+ */
     // }
@@ -343,7 +344,7 @@ large_num large_num::operator/(const large_num &other) const{
 }
 
 large_num large_num::operator%(const large_num &other) const{
-    return divmod(other).second;
+    return ::divmod(*this, other).second;
     // return *this - (*this / other) * other;
 }
 
@@ -513,34 +514,57 @@ large_num::operator bool() const{
 }
 
 
-large_num::operator std::string() const{ // reimplement using to_string on unsigned long long chunks
-    std::string s;
-    large_num num = *this;
+large_num::operator std::string() const{ // reimplement using to_string on unsigned long long chunks ----------
+    large_num num = ::abs(*this);
+    bool is_negative = (*this).is_negative();
 
-    bool is_negative;
+    std::string number_representation;
 
-    if (num.is_negative()){
-        is_negative = true;
-        // s.append('-');
-        num = -num;
-    }else{
-        is_negative = false;
+    while (num > power_max){
+        unsigned long long small_piece;
+        std::tie(num, small_piece) = ::divmod(num, power_max);
+        std::string small_piece_representaion = std::to_string(small_piece);
+        small_piece_representaion = std::string(digits_max - small_piece_representaion.size(), '0') + small_piece_representaion;
+        number_representation = small_piece_representaion + number_representation;
     }
+    unsigned long long small_piece = num;
+    std::string small_piece_representaion = std::to_string(small_piece);
+    number_representation = small_piece_representaion + number_representation;
 
-    std::string reversed_digits;
-    do {
-        auto [upper_digits, lowest_digit] = num.divmod(10);
-        char digit = '0' + static_cast<char>(lowest_digit);
-        reversed_digits.push_back(digit);
-        num = std::move(upper_digits);
-    }while (num);
-
-    std::reverse(reversed_digits.begin(), reversed_digits.end());
     if (is_negative){
-        reversed_digits.insert(0, 1, '-');
+        number_representation = '-' + number_representation;
     }
 
-    return reversed_digits;
+    return number_representation;
+
+
+    // std::string s;
+    // large_num num = *this;
+
+    // bool is_negative;
+
+    // if (num.is_negative()){
+    //     is_negative = true;
+    //     // s.append('-');
+    //     num = -num;
+    // }else{
+    //     is_negative = false;
+    // }
+
+    // std::string reversed_digits;
+    // do {
+    //     auto [upper_digits, lowest_digit] = ::divmod(num, 10);
+    //     char digit = '0' + static_cast<char>(lowest_digit);
+    //     reversed_digits.push_back(digit);
+    //     num = std::move(upper_digits);
+    // }while (num);
+
+    // std::reverse(reversed_digits.begin(), reversed_digits.end());
+    // if (is_negative){
+    //     reversed_digits.insert(0, 1, '-');
+    // }
+
+    // return reversed_digits;
 }
 
 
@@ -574,6 +598,21 @@ std::istream &operator>>(std::istream &is, large_num &n){
     n = large_num(number_representation);
     return is;
 }
+
+
+void large_num::invert(){
+    for (auto &part: storage)
+        part = ~part;
+    return;
+}
+
+
+void large_num::negate(){
+    invert();
+    ++*this;
+}
+
+
 
 
 void large_num::expand_upto(size_t n){

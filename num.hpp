@@ -10,6 +10,12 @@
 #include <algorithm>
 
 
+#define PRIVATE_ACCESS 0
+
+#if PRIVATE_ACCESS
+    #define private public
+#endif
+
 #define BITSIZEOF(T) sizeof(T) * __CHAR_BIT__
 
 #define APPLY_TO_ARITHMETIC_OPERATORS(f)\
@@ -42,11 +48,8 @@ struct large_num;
 std::ostream &operator<<(std::ostream &os, const large_num &n);
 std::istream &operator>>(std::istream &is, large_num &n);
 
-#define PRIVATE_ACCESS 1
-
-#if PRIVATE_ACCESS
-    #define private public
-#endif
+large_num abs(const large_num& n);
+std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b);
 
 // // helper function
 // constexpr size_t divide_round_up(size_t a, size_t b) noexcept{
@@ -142,7 +145,11 @@ struct large_num{
 
         friend std::ostream &operator<<(std::ostream &os, const large_num &n);
         friend std::istream &operator>>(std::istream &is, large_num &n);
+        friend large_num abs(const large_num& n);
+        friend std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b);
     private:
+        void invert();
+        void negate();
         std::pair<large_num, large_num> divmod(const large_num &other) const;
         large_num abs() const;
         void expand_upto(size_t n);
@@ -212,9 +219,5 @@ large_num &operator operation(large_num &v, const T u){ \
 
 APPLY_TO_ARITHMETIC_ASSIGNMENT_OPERATORS(DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_RIGHT)
 
-
-large_num abs(const large_num& n);
-
-std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b);
 
 #endif
