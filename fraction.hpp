@@ -32,6 +32,9 @@ class large_fraction{
 
         explicit operator bool() const;
         explicit operator large_num() const;
+
+        friend std::ostream &operator<<(std::ostream &os, const large_fraction &f);
+        friend std::istream &operator>>(std::istream &is, large_fraction &f);
     private:
         void reduce();
     private:
