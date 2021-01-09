@@ -48,8 +48,8 @@ struct large_num;
 std::ostream &operator<<(std::ostream &os, const large_num &n);
 std::istream &operator>>(std::istream &is, large_num &n);
 
-large_num abs(const large_num& n);
-std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b);
+large_num abs(const large_num& n) noexcept;
+std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b) noexcept(false);
 
 // // helper function
 // constexpr size_t divide_round_up(size_t a, size_t b) noexcept{
@@ -68,10 +68,10 @@ struct large_num{
         large_num &operator=(const large_num &) = default;
         large_num &operator=(large_num &&) = default;
 
-        large_num(bool value);
+        large_num(bool value) noexcept;
 
         template<std::integral T>
-        large_num(T value){
+        large_num(T value) noexcept{
             constexpr bool may_need_sign_bit = std::is_unsigned_v<T>;
             constexpr size_t storage_size = sizeof(T) + may_need_sign_bit;
             storage = std::vector<byte_type>(storage_size, 0);
@@ -87,51 +87,51 @@ struct large_num{
         explicit large_num(const std::string &number_representation);
         explicit large_num(const char *number_representation);
 
-        large_num operator~() const;
-        large_num operator&(const large_num &other) const;
-        large_num operator|(const large_num &other) const;
-        large_num operator^(const large_num &other) const;
+        large_num operator~() const noexcept;
+        large_num operator&(const large_num &other) const noexcept;
+        large_num operator|(const large_num &other) const noexcept;
+        large_num operator^(const large_num &other) const noexcept;
 
-        large_num operator+() const;
-        large_num operator-() const;
+        large_num operator+() const noexcept;
+        large_num operator-() const noexcept;
 
-        large_num &operator++();
-        large_num operator++(int);
-        large_num &operator--();
-        large_num operator--(int);
+        large_num &operator++() noexcept;
+        large_num operator++(int) noexcept;
+        large_num &operator--() noexcept;
+        large_num operator--(int) noexcept;
 
-        large_num operator+(const large_num &other) const;
-        large_num operator-(const large_num &other) const;
-        large_num operator*(const large_num &other) const;
-        large_num operator/(const large_num &other) const;
-        large_num operator%(const large_num &other) const;
+        large_num operator+(const large_num &other) const noexcept;
+        large_num operator-(const large_num &other) const noexcept;
+        large_num operator*(const large_num &other) const noexcept;
+        large_num operator/(const large_num &other) const noexcept(false);
+        large_num operator%(const large_num &other) const noexcept(false);
 
-        large_num operator<<(const large_num &other) const;
-        large_num operator>>(const large_num &other) const;
+        large_num operator<<(const large_num &other) const noexcept(false);
+        large_num operator>>(const large_num &other) const noexcept(false);
 
-        large_num &operator&=(const large_num &other);
-        large_num &operator|=(const large_num &other);
-        large_num &operator^=(const large_num &other);
+        large_num &operator&=(const large_num &other) noexcept;
+        large_num &operator|=(const large_num &other) noexcept;
+        large_num &operator^=(const large_num &other) noexcept;
 
-        large_num &operator+=(const large_num &other);
-        large_num &operator-=(const large_num &other);
-        large_num &operator*=(const large_num &other);
-        large_num &operator/=(const large_num &other);
-        large_num &operator%=(const large_num &other);
+        large_num &operator+=(const large_num &other) noexcept;
+        large_num &operator-=(const large_num &other) noexcept;
+        large_num &operator*=(const large_num &other) noexcept;
+        large_num &operator/=(const large_num &other) noexcept(false);
+        large_num &operator%=(const large_num &other) noexcept(false);
 
-        large_num &operator<<=(const large_num &other);
-        large_num &operator>>=(const large_num &other);
+        large_num &operator<<=(const large_num &other) noexcept(false);
+        large_num &operator>>=(const large_num &other) noexcept(false);
 
-        std::strong_ordering operator<=>(const large_num &other) const;
+        std::strong_ordering operator<=>(const large_num &other) const noexcept;
 
-        bool operator==(const large_num &other) const = default;
+        bool operator==(const large_num &other) const noexcept = default;
 
-        operator bool() const;
+        operator bool() const noexcept;
 
         explicit operator std::string() const;
 
         template<std::integral T>
-        operator T() const{
+        operator T() const noexcept{
             T value = is_negative() ? -1 : 0; // fill with sign bits
             constexpr size_t bytes_to_read = sizeof(T);
 
@@ -145,48 +145,48 @@ struct large_num{
 
         friend std::ostream &operator<<(std::ostream &os, const large_num &n);
         friend std::istream &operator>>(std::istream &is, large_num &n);
-        friend large_num abs(const large_num& n);
-        friend std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b);
+        friend large_num abs(const large_num& n) noexcept;
+        friend std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b) noexcept(false);
     private:
-        void invert();
-        void negate();
-        std::pair<large_num, large_num> divmod(const large_num &other) const;
-        large_num abs() const;
-        void expand_upto(size_t n);
+        void invert() noexcept;
+        void negate() noexcept;
+        std::pair<large_num, large_num> divmod(const large_num &other) const noexcept(false);
+        large_num abs() const noexcept;
+        void expand_upto(size_t n) noexcept(false);
         // enum class initialise_by_size;
         // static initialise_by_size by_size;
         // large_num(const size_t bitsize, const initialise_by_size tag);
-        bool get_bit(size_t n) const;
+        bool get_bit(size_t n) const noexcept;
         // void set_bit(size_t n, bool value);
-        bool sign_bit() const;
-        bool is_negative() const;
-        bool is_zero() const;
-        bool is_positive() const;
-        void clean_up();
+        bool sign_bit() const noexcept;
+        bool is_negative() const noexcept;
+        bool is_zero() const noexcept;
+        bool is_positive() const noexcept;
+        void clean_up() noexcept;
     private:
         std::vector<byte_type> storage{0,};
 };
 
 
 template <std::integral T>
-std::strong_ordering operator<=>(const large_num v, const T u){
+std::strong_ordering operator<=>(const large_num v, const T u) noexcept{
     return v <=> static_cast<large_num>(u);
 }
 
 template <std::integral T>
-bool operator==(const large_num v, const T u){
+bool operator==(const large_num v, const T u) noexcept{
     return v == static_cast<large_num>(u);
 }
 
 template <std::integral T>
-bool operator==(const T v, const large_num u){
+bool operator==(const T v, const large_num u) noexcept{
     return static_cast<large_num>(v) == u;
 }
 
 
 #define DEFINE_ARITHMETIC_OPERATION_LEFT(operation)\
 template <std::integral T> \
-large_num operator operation(const T v, const large_num u){ \
+large_num operator operation(const T v, const large_num u) noexcept(noexcept(std::declval<large_num>() operation std::declval<large_num>())){ \
     return static_cast<large_num>(v) operation u; \
 }
 
@@ -195,7 +195,7 @@ APPLY_TO_ARITHMETIC_OPERATORS(DEFINE_ARITHMETIC_OPERATION_LEFT)
 
 #define DEFINE_ARITHMETIC_OPERATION_RIGHT(operation)\
 template <std::integral T> \
-large_num operator operation(const large_num v, const T u){ \
+large_num operator operation(const large_num v, const T u) noexcept(noexcept(std::declval<large_num>() operation std::declval<large_num>())){ \
     return v operation static_cast<large_num>(u); \
 }
 
@@ -204,7 +204,7 @@ APPLY_TO_ARITHMETIC_OPERATORS(DEFINE_ARITHMETIC_OPERATION_RIGHT)
 
 #define DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_LEFT(operation)\
 template <std::integral T> \
-T &operator operation(T &v, const large_num u){ \
+T &operator operation(T &v, const large_num u) noexcept(noexcept(std::declval<large_num>() operation std::declval<large_num>())){ \
     return v operation static_cast<T>(u); \
 }
 
@@ -213,7 +213,7 @@ APPLY_TO_ARITHMETIC_ASSIGNMENT_OPERATORS(DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_
 
 #define DEFINE_ARITHMETIC_OPERATION_ASSIGNMENT_RIGHT(operation)\
 template <std::integral T> \
-large_num &operator operation(large_num &v, const T u){ \
+large_num &operator operation(large_num &v, const T u) noexcept(noexcept(std::declval<large_num>() operation std::declval<large_num>())){ \
     return v operation static_cast<large_num>(u); \
 }
 

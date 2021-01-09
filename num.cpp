@@ -1,12 +1,12 @@
 #include "num.hpp"
 
-large_num::large_num(bool value): storage(std::vector<byte_type>{value}){}
+large_num::large_num(bool value) noexcept: storage(std::vector<byte_type>{value}){}
 
 template <typename T>
 constexpr size_t exponent10_max = std::numeric_limits<T>::digits10;
 
 template <typename T>
-constexpr T power10_max_calc(){
+constexpr T power10_max_calc() noexcept{
     T power10 = 1;
     for (size_t i = 0; i < exponent10_max<T>; ++i){
         power10 *= 10;
@@ -43,9 +43,6 @@ large_num::large_num(const std::string &number_representation){
     if (std::any_of(number_representation.begin(), number_representation.end(), [](char c){return isspace(c);}))
         throw std::runtime_error("to be done ----------");
 
-    #define div_round_up(a, b) (a - 1)/(b) + 1
-    #define mod_round_up(a, b) (a - 1)%(b) + 1
-
     size_t number_of_loose_digits_at_the_start = (number_representation.size() - has_sign) % digits_max;
 
     //bool has_left_over_digits = number_of_loose_digits_at_the_start;
@@ -70,13 +67,13 @@ large_num::large_num(const std::string &number_representation){
 large_num::large_num(const char *number_representation): large_num(std::string(number_representation)){}
 
 
-large_num large_num::operator~() const{
+large_num large_num::operator~() const noexcept{
     large_num result = *this;
     result.invert();
     return result;
 }
 
-large_num large_num::operator&(const large_num &other) const{
+large_num large_num::operator&(const large_num &other) const noexcept{
     large_num argument1 = *this;
     large_num argument2 = other;
 
@@ -92,7 +89,7 @@ large_num large_num::operator&(const large_num &other) const{
     return argument1;
 }
 
-large_num large_num::operator|(const large_num &other) const{
+large_num large_num::operator|(const large_num &other) const noexcept{
     large_num argument1 = *this;
     large_num argument2 = other;
 
@@ -108,7 +105,7 @@ large_num large_num::operator|(const large_num &other) const{
     return argument1;
 }
 
-large_num large_num::operator^(const large_num &other) const{
+large_num large_num::operator^(const large_num &other) const noexcept{
     large_num argument1 = *this;
     large_num argument2 = other;
 
@@ -125,31 +122,31 @@ large_num large_num::operator^(const large_num &other) const{
 }
 
 
-large_num large_num::operator+() const{
+large_num large_num::operator+() const noexcept{
     return *this;
 }
 
-large_num large_num::operator-() const{
+large_num large_num::operator-() const noexcept{
     large_num result = *this;
     result.negate();
     return result;
 }
 
-large_num &large_num::operator++(){
+large_num &large_num::operator++() noexcept{
     return *this += 1;
 }
 
-large_num large_num::operator++(int){
+large_num large_num::operator++(int) noexcept{
     large_num old_value = *this;
     ++*this;
     return old_value;
 }
 
-large_num &large_num::operator--(){
+large_num &large_num::operator--() noexcept{
     return *this -= 1;
 }
 
-large_num large_num::operator--(int){
+large_num large_num::operator--(int) noexcept{
     large_num old_value = *this;
     --*this;
     return old_value;
@@ -171,7 +168,7 @@ constexpr std::pair<byte_type, byte_type> byte_addition(byte_type a, byte_type b
 }
 //-----
 
-large_num large_num::operator+(const large_num &other) const{
+large_num large_num::operator+(const large_num &other) const noexcept{
     large_num augend = *this;
     large_num addend = other;
 
@@ -192,7 +189,7 @@ large_num large_num::operator+(const large_num &other) const{
     return augend;
 }
 
-large_num large_num::operator-(const large_num &other) const{
+large_num large_num::operator-(const large_num &other) const noexcept{
     return *this + -other;
 }
 
@@ -232,7 +229,7 @@ constexpr std::pair<byte_type, byte_type> byte_multiplication(const byte_type a,
 //-----
 
 
-large_num large_num::operator*(const large_num &other) const{
+large_num large_num::operator*(const large_num &other) const noexcept{
     if (other.is_negative()){
         return -(*this * -other);
     }
@@ -259,7 +256,7 @@ large_num large_num::operator*(const large_num &other) const{
     // return product;
 }
 
-large_num large_num::abs() const{
+large_num large_num::abs() const noexcept{
     if (is_negative()){
         return -*this;
     }else{
@@ -267,7 +264,7 @@ large_num large_num::abs() const{
     }
 }
 
-std::pair<large_num, large_num> large_num::divmod(const large_num &other) const{
+std::pair<large_num, large_num> large_num::divmod(const large_num &other) const noexcept(false){
     // https://en.wikipedia.org/wiki/Division_algorithm
     if (other.is_zero()){
         throw std::domain_error("You cannot divide by 0"); /* +UB+ */
@@ -296,7 +293,7 @@ std::pair<large_num, large_num> large_num::divmod(const large_num &other) const{
     return std::pair(Q, R);
 }
 
-large_num large_num::operator/(const large_num &other) const{
+large_num large_num::operator/(const large_num &other) const noexcept(false){
     return ::divmod(*this, other).first;
     // if (other.is_zero()){
     //     throw std::out_of_range("You cannot divide by 0"); /* +UB+ */
@@ -343,13 +340,13 @@ large_num large_num::operator/(const large_num &other) const{
     // // return quotient;
 }
 
-large_num large_num::operator%(const large_num &other) const{
+large_num large_num::operator%(const large_num &other) const noexcept(false){
     return ::divmod(*this, other).second;
     // return *this - (*this / other) * other;
 }
 
 
-large_num large_num::operator<<(const large_num &other) const{
+large_num large_num::operator<<(const large_num &other) const noexcept(false){
     if (other.is_negative()){
         throw std::domain_error("You cannot shift by a negative number"); /* +UB+ */
     }
@@ -398,7 +395,7 @@ large_num large_num::operator<<(const large_num &other) const{
     return result;
 }
 
-large_num large_num::operator>>(const large_num &other) const{ // to be done ----------
+large_num large_num::operator>>(const large_num &other) const noexcept(false){ // to be done ----------
     if (other.is_negative()){
         throw std::domain_error("You cannot shift by a negative number"); /* +UB+ */
     }
@@ -455,7 +452,7 @@ large_num large_num::operator>>(const large_num &other) const{ // to be done ---
 }
 
 #define DEFINE_ASSIGNMENT(operation)\
-large_num &large_num::operator operation##=(const large_num &other){ \
+large_num &large_num::operator operation##=(const large_num &other) noexcept(noexcept(std::declval<large_num>() operation std::declval<large_num>())){ \
     return *this = *this operation other; \
 }
 
@@ -510,7 +507,7 @@ AP(DEFINE_ASSIGNMENT)
 // }
 
 
-std::strong_ordering large_num::operator<=>(const large_num &other) const{
+std::strong_ordering large_num::operator<=>(const large_num &other) const noexcept{
     // fast checks
     //     different signs
     const auto sign1 =       is_positive() -       is_negative();
@@ -548,7 +545,7 @@ std::strong_ordering large_num::operator<=>(const large_num &other) const{
 }
 
 
-large_num::operator bool() const{
+large_num::operator bool() const noexcept{
     return !is_zero();
 }
 
@@ -639,14 +636,14 @@ std::istream &operator>>(std::istream &is, large_num &n){
 }
 
 
-void large_num::invert(){
+void large_num::invert() noexcept{
     for (auto &part: storage)
         part = ~part;
     return;
 }
 
 
-void large_num::negate(){
+void large_num::negate() noexcept{
     invert();
     ++*this;
 }
@@ -654,7 +651,7 @@ void large_num::negate(){
 
 
 
-void large_num::expand_upto(size_t n){
+void large_num::expand_upto(size_t n) noexcept(false){
     const size_t old_size = storage.size();
     const size_t new_size = n;
 
@@ -666,7 +663,7 @@ void large_num::expand_upto(size_t n){
 }
 
 
-bool large_num::get_bit(size_t n) const{
+bool large_num::get_bit(size_t n) const noexcept{
     size_t max_bit_index = storage.size() * bits_per_byte - 1;
     n = std::min(n, max_bit_index); // bits past-the-end are the same as the msb
 
@@ -700,25 +697,25 @@ bool large_num::get_bit(size_t n) const{
 //     clean_up();
 // }
 
-bool large_num::sign_bit() const{
+bool large_num::sign_bit() const noexcept{
     size_t bit_index = storage.size() * bits_per_byte - 1;
     bool bit = get_bit(bit_index);
     return bit;
 }
 
-bool large_num::is_negative() const{
+bool large_num::is_negative() const noexcept{
     return sign_bit();
 }
 
-bool large_num::is_zero() const{
+bool large_num::is_zero() const noexcept{
     return storage.size() == 1 && storage.at(0) == static_cast<byte_type>(0);
 }
 
-bool large_num::is_positive() const{
+bool large_num::is_positive() const noexcept{
     return !is_negative() && !is_zero();
 }
 
-void large_num::clean_up(){
+void large_num::clean_up() noexcept{
     byte_type sign_byte = storage.back();
     bool sign_bit_value;
     if (sign_byte == static_cast<byte_type>(-1)){
@@ -747,10 +744,10 @@ void large_num::clean_up(){
     storage.resize(new_size);
 }
 
-large_num abs(const large_num& n){
+large_num abs(const large_num& n) noexcept{
     return n.abs();
 }
 
-std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b){
+std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b) noexcept(false){
     return a.divmod(b);
 }
