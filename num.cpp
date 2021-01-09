@@ -270,7 +270,7 @@ large_num large_num::abs() const{
 std::pair<large_num, large_num> large_num::divmod(const large_num &other) const{
     // https://en.wikipedia.org/wiki/Division_algorithm
     if (other.is_zero()){
-        throw std::out_of_range("You cannot divide by 0"); /* +UB+ */
+        throw std::domain_error("You cannot divide by 0"); /* +UB+ */
     }
     large_num N = ::abs(*this);
     large_num D = ::abs(other);
@@ -351,7 +351,7 @@ large_num large_num::operator%(const large_num &other) const{
 
 large_num large_num::operator<<(const large_num &other) const{
     if (other.is_negative()){
-        throw std::out_of_range("You cannot shift by a negative number"); /* +UB+ */
+        throw std::domain_error("You cannot shift by a negative number"); /* +UB+ */
     }
 
     //size_t additional_bytes = other / static_cast<large_num>(bits_per_byte) + static_cast<large_num>(static_cast<bool>(other % static_cast<large_num>(bits_per_byte)));
@@ -398,20 +398,59 @@ large_num large_num::operator<<(const large_num &other) const{
     return result;
 }
 
-large_num large_num::operator>>(const large_num &other) const{
+large_num large_num::operator>>(const large_num &other) const{ // to be done ----------
     if (other.is_negative()){
-        throw std::out_of_range("You cannot shift by a negative number"); /* +UB+ */
+        throw std::domain_error("You cannot shift by a negative number"); /* +UB+ */
     }
     if ((*this).is_negative()){
-        return ~(~*this >> other);
+        return ~(~(*this) >> other);
     }
 
-    large_num result = *this;
-    large_num shift = other;
-    while(shift--){
-        result = result / large_num(2);
-    }
+    // large_num result = *this;
+    // large_num shift = other;
+    // while(shift--){
+    //     result = result / large_num(2);
+    // }
     
+    // return result;
+
+    large_num result = *this;
+    size_t initial_size = result.storage.size();
+
+    size_t bytes_shifted = static_cast<size_t>(other) / bits_per_byte; // fix for numbers between __SIZE_T_MAX__ and 8 * __SIZE_T_MAX__ - 1
+    size_t bits_shifted  = static_cast<size_t>(other) % bits_per_byte;
+
+    // size_t additional_bytes = bytes_shifted + static_cast<bool>(bits_shifted);
+
+    size_t new_size = initial_size - bytes_shifted;
+
+    // result.expand_upto(new_size);
+    
+    // to be improved ---------- ---------- ---------- ----------
+    if (bytes_shifted){
+        for (size_t i = 0; i < new_size; ++i){
+            result.storage.at(i) = result.storage.at(i + bytes_shifted);
+        }
+        for (size_t i = new_size; i < initial_size; ++i){
+            result.storage.at(i) = 0;
+        }
+    }
+    if (bits_shifted){
+        byte_type shifted_carry;
+        byte_type shifted_carry_prev = 0;
+        for (size_t i = new_size; i --> 0;){
+            shifted_carry = result.storage.at(i) << (bits_per_byte - bits_shifted);
+            result.storage.at(i) >>= bits_shifted;
+            result.storage.at(i) |= shifted_carry_prev;
+            shifted_carry_prev = shifted_carry;
+            // carry = result.storage.at(i) >> (bits_per_byte - bits_shifted);
+            // result.storage.at(i) <<= bits_shifted;
+            // result.storage.at(i) |= carry_prev;
+            // carry_prev = carry;
+        }
+    }
+
+    result.clean_up();
     return result;
 }
 
