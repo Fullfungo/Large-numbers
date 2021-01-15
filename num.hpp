@@ -45,16 +45,12 @@ f(>>=)
 
 struct large_num;
 
+// friends
 std::ostream &operator<<(std::ostream &os, const large_num &n);
 std::istream &operator>>(std::istream &is, large_num &n);
-
 large_num abs(const large_num& n) noexcept;
 std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b) noexcept(false);
 
-// // helper function
-// constexpr size_t divide_round_up(size_t a, size_t b) noexcept{
-//     return a / b + static_cast<bool>(a % b);
-// }
 
 struct large_num{
     using byte_type = unsigned char; // want: change to uint_fast8_t [or not]
