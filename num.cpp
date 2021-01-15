@@ -197,19 +197,47 @@ large_num large_num::operator-(const large_num &other) const noexcept{
 //----- to be fixed
 using byte_type = large_num::byte_type;
 constexpr std::pair<byte_type, byte_type> byte_multiplication(const byte_type a, const byte_type b) noexcept(true){
-    using two_byte = unsigned short;
-    two_byte prod = (two_byte)a * (two_byte)b;
+    // using two_byte = uintmax_t;
+    // two_byte prod = (two_byte)a * (two_byte)b;
 
-    return std::make_pair((byte_type)(prod), (byte_type)(prod >> 8));
-    // constexpr size_t upper_halfbyte_size = bits_per_byte / 2;
-    // constexpr size_t lower_halfbyte_size = bits_per_byte - upper_halfbyte_size;
+    // return std::make_pair((byte_type)(prod), (byte_type)(prod >> 8));
+    constexpr size_t bits_per_byte = BITSIZEOF(byte_type);
 
-    // constexpr byte_type lower_halfbyte_mask = (1 << lower_halfbyte_size) - 1;
 
-    // byte_type a_upper_halfbyte = a >> lower_halfbyte_size;
-    // byte_type a_lower_halfbyte = a &  lower_halfbyte_mask;
-    // byte_type b_upper_halfbyte = b >> lower_halfbyte_size;
-    // byte_type b_lower_halfbyte = b &  lower_halfbyte_mask;
+
+
+    constexpr size_t upper_halfbyte_size = bits_per_byte / 2;
+    constexpr size_t lower_halfbyte_size = bits_per_byte - upper_halfbyte_size;
+
+    constexpr byte_type lower_halfbyte_mask = (static_cast<byte_type>(1) << lower_halfbyte_size) - 1;
+
+    byte_type a_upper_halfbyte = a >> lower_halfbyte_size;
+    byte_type a_lower_halfbyte = a &  lower_halfbyte_mask;
+    byte_type b_upper_halfbyte = b >> lower_halfbyte_size;
+    byte_type b_lower_halfbyte = b &  lower_halfbyte_mask;
+
+    byte_type upper_byte = a_upper_halfbyte * b_upper_halfbyte;
+    byte_type lower_byte = a_lower_halfbyte * b_lower_halfbyte;
+
+    byte_type between_byte1 = a_upper_halfbyte * b_lower_halfbyte;
+    byte_type between_byte2 = a_lower_halfbyte * b_upper_halfbyte;
+
+    byte_type betwee_byte1_upper_halfbyte = between_byte1 >> lower_halfbyte_size;
+    byte_type betwee_byte1_lower_halfbyte = between_byte1 &  lower_halfbyte_mask;
+    byte_type betwee_byte2_upper_halfbyte = between_byte2 >> lower_halfbyte_size;
+    byte_type betwee_byte2_lower_halfbyte = between_byte2 &  lower_halfbyte_mask;
+
+    byte_type carry;
+
+    std::tie(lower_byte, carry) = byte_addition(lower_byte, betwee_byte1_lower_halfbyte << lower_halfbyte_size);
+    upper_byte += carry;
+    std::tie(lower_byte, carry) = byte_addition(lower_byte, betwee_byte2_lower_halfbyte << lower_halfbyte_size);
+    upper_byte += carry;
+
+    upper_byte += betwee_byte1_upper_halfbyte;
+    upper_byte += betwee_byte2_upper_halfbyte;
+
+    return std::pair(lower_byte, upper_byte);
 
     // // (10 a + b)(10 c + d) = 100 ac + 10 (ad + bc) + bd = 100 ac + 10 ((a+b)(c+d)-ac-bd) + bd
     // // byte_type result = top_part << (2 * lower_halfbyte_size) + middle_part << lower_halfbyte_size + bottom_part;
@@ -671,7 +699,7 @@ bool large_num::get_bit(size_t n) const noexcept{
     size_t bit_index  = n % bits_per_byte;
 
     byte_type byte = storage.at(byte_index);
-    size_t bit_mask = (1 << bit_index);
+    byte_type bit_mask = (static_cast<byte_type>(1) << bit_index);
     bool bit = byte & bit_mask;
     return bit;
 }
