@@ -51,11 +51,13 @@ std::istream &operator>>(std::istream &is, large_num &n);
 large_num abs(const large_num& n) noexcept;
 std::pair<large_num, large_num> divmod(const large_num &a, const large_num &b) noexcept(false);
 
+#define DIVIDE_ROUND_UP(a, b) ((a - 1) / b + 1)
 
 struct large_num{
-    using byte_type = unsigned char; // want: change to uint_fast8_t [or not]
-    static_assert(sizeof(byte_type) == 1 && std::is_unsigned_v<byte_type>);
-    static constexpr size_t bits_per_byte = BITSIZEOF(byte_type);
+    //private:
+        using byte_type = unsigned char; // want: change to uint_fast8_t [or not]
+        static_assert(/*sizeof(byte_type) == 1 && */std::is_unsigned_v<byte_type>);
+        static constexpr size_t bits_per_byte = BITSIZEOF(byte_type);
 
     public:
         large_num() = default;
@@ -69,12 +71,12 @@ struct large_num{
         template<std::integral T>
         large_num(T value) noexcept{
             constexpr bool may_need_sign_bit = std::is_unsigned_v<T>;
-            constexpr size_t storage_size = sizeof(T) + may_need_sign_bit;
+            constexpr size_t storage_size = DIVIDE_ROUND_UP(sizeof(T), sizeof(byte_type)) + may_need_sign_bit;
             storage = std::vector<byte_type>(storage_size, 0);
 
             for (auto &byte : storage){
                 byte = value;
-                value >>= bits_per_byte;
+                value >>= std::min(bits_per_byte, BITSIZEOF(T) - 1);
             }
 
             clean_up();
@@ -129,10 +131,10 @@ struct large_num{
         template<std::integral T>
         operator T() const noexcept{
             T value = is_negative() ? -1 : 0; // fill with sign bits
-            constexpr size_t bytes_to_read = sizeof(T);
+            constexpr size_t bytes_to_read = DIVIDE_ROUND_UP(sizeof(T), sizeof(byte_type));
 
             for (auto byte : storage | std::views::take(bytes_to_read) | std::views::reverse){
-                value <<= bits_per_byte;
+                value <<= std::min(bits_per_byte, BITSIZEOF(T) - 1);
                 value |= byte;
             }
             
