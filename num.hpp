@@ -16,7 +16,7 @@
     #define private public
 #endif
 
-#define BITSIZEOF(T) sizeof(T) * __CHAR_BIT__
+#define BITSIZEOF(T) (sizeof(T) * __CHAR_BIT__)
 
 #define APPLY_TO_ARITHMETIC_OPERATORS(f)\
 f(&) \
